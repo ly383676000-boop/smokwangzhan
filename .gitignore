@@ -10,6 +10,9 @@ Thumbs.db
 *.sqlite
 *.sqlite3
 
+# Vercel data persistence
+data/
+
 # IDE
 .vscode/
 .idea/

@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// Vercel 全栈部署：API 和前端同域，直接用相对路径
+// 本地开发时后端跑在 localhost:3001
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 export interface ApiProduct {
   id: number;
