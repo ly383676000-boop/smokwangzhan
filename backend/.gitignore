@@ -1,0 +1,14 @@
+# Ignore
+node_modules/
+dist/
+.env
+
+# Database (ephemeral on Railway, use volume mount for persistence)
+src/db/database.sqlite
+
+# Uploads (use volume mount)
+uploads/
+
+# OS
+.DS_Store
+Thumbs.db

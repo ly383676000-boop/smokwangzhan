@@ -1,0 +1,17 @@
+{
+  "name": "smoke-shop-api",
+  "version": "1.0.0",
+  "description": "Smoke Shop外贸购物网站后端API",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1",
+    "sql.js": "^1.11.0"
+  }
+}

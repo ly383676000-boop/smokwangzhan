@@ -1,0 +1,208 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap');
+
+::root {
+  --primary: #1B4332;
+  --primary-dark: #143728;
+  --primary-light: #40916C;
+  --accent: #D4A574;
+  --accent-dark: #C9A227;
+  --accent-hover: #B8875A;
+  --gold: #D4A574;
+  --rose-gold: #B76E79;
+  --bg-light: #F8F9FA;
+  --bg-white: #FFFFFF;
+  --bg-warm: #F5F5F0;
+  --border-light: #E8ECEF;
+  --text-dark: #212529;
+  --text-body: #495057;
+  --text-secondary: #6C757D;
+  --text-muted: #ADB5BD;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background-color: var(--bg-light);
+  color: var(--text-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+}
+
+.price-tag, .price-text {
+  font-family: 'Roboto Mono', monospace;
+}
+
+@layer components {
+  /* Primary Button - Deep Green */
+  .btn-primary {
+    @apply bg-[#1B4332] text-white px-7 py-3.5 rounded-lg font-semibold transition-all duration-200;
+    font-family: 'Poppins', sans-serif;
+  }
+  .btn-primary:hover {
+    @apply bg-[#143728] shadow-lg;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(27,67,50,0.3);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  /* Accent Button - Gold */
+  .btn-accent {
+    @apply bg-[#D4A574] text-white px-7 py-3.5 rounded-lg font-semibold transition-all duration-200;
+    font-family: 'Poppins', sans-serif;
+  }
+  .btn-accent:hover {
+    @apply bg-[#C9A227] shadow-lg;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(212,165,116,0.4);
+  }
+  .btn-accent:active {
+    transform: translateY(0);
+  }
+
+  /* Secondary Button */
+  .btn-secondary {
+    @apply bg-transparent text-[#1B4332] border-2 border-[#1B4332] px-6 py-2.5 rounded-lg font-semibold transition-all duration-200;
+    font-family: 'Poppins', sans-serif;
+  }
+  .btn-secondary:hover {
+    @apply bg-[#1B4332] text-white;
+  }
+
+  /* Ghost Button */
+  .btn-ghost {
+    @apply bg-transparent text-[#495057] px-4 py-2 rounded-lg transition-all duration-200;
+    font-family: 'Inter', sans-serif;
+  }
+  .btn-ghost:hover {
+    @apply bg-[#F8F9FA];
+  }
+
+  /* Card Component */
+  .card {
+    @apply bg-white rounded-xl overflow-hidden transition-all duration-300;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+
+  /* Input Field */
+  .input-field {
+    @apply w-full px-4 py-3 border border-[#DEE2E6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4332] focus:border-transparent transition-all duration-200 bg-white text-[#212529];
+  }
+  .input-field::placeholder {
+    @apply text-[#ADB5BD];
+  }
+
+  /* Section Title */
+  .section-title {
+    @apply text-2xl font-semibold text-[#212529] mb-6;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  }
+  .badge-primary {
+    @apply bg-[#1B4332] text-white;
+  }
+  .badge-accent {
+    @apply bg-[#D4A574] text-white;
+  }
+
+  /* Price Tag - Gold Accent */
+  .price-tag {
+    @apply text-xl font-medium text-[#D4A574];
+    font-family: 'Roboto Mono', monospace;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F5F5F5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CCCCCC;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999999;
+}
+
+/* Animation Keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes badge-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+.animate-slideOutRight {
+  animation: slideOutRight 0.3s ease-out forwards;
+}
+
+.animate-badge-bounce {
+  animation: badge-bounce 0.3s ease;
+}
