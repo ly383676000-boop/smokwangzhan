@@ -154,8 +154,15 @@ function runQuery(sql, params = []) {
       stmt.bind(params);
     }
     const results = [];
-    while (stmt.step()) {
-      results.push(stmt.getAsObject());
+    while (true) {
+      const result = stmt.step();
+      if (result === false || result === undefined || (typeof result === 'object' && !result)) {
+        break;
+      }
+      const row = stmt.getAsObject();
+      if (row) {
+        results.push(row);
+      }
     }
     stmt.free();
     return results;

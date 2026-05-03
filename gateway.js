@@ -43,9 +43,10 @@ app.use(express.static(path.join(__dirname, 'frontend', 'dist'), {
 }));
 
 // SPA fallback（只对非 API、非 uploads 的请求返回 index.html）
-app.get('{*path}', (req, res, next) => {
-  // Skip API and uploads routes
-  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+app.use((req, res, next) => {
+  if (req.method !== 'GET') return next();
+  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next();
+  if (req.path.endsWith('.js') || req.path.endsWith('.css') || req.path.endsWith('.png') || req.path.endsWith('.jpg') || req.path.endsWith('.svg')) {
     return next();
   }
   res.sendFile(path.join(__dirname, 'frontend', 'dist', 'index.html'));
