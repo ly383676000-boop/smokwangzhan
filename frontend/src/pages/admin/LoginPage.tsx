@@ -21,6 +21,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
+      
+      console.log('Login response status:', res.status);
+      console.log('Login response headers:', [...res.headers.entries()]);
+      
       const data = await res.json();
 
       if (res.ok) {
@@ -30,8 +34,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       } else {
         setError(data.error || 'Login failed');
       }
-    } catch {
-      setError('Network error');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Error: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setLoading(false);
     }
