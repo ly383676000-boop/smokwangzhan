@@ -10,11 +10,15 @@ const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, 'backend', 'upl
 app.use('/uploads', express.static(uploadDir));
 
 // ─── 后端 API：代理到 localhost:3001 ───
-// 后端路由本身带 /api 前缀，网关直接透传 /api 路径
+// 注意：http-proxy-middleware v3 的 app.use('/api', proxy) 会自动剥离 /api 前缀
+// 所以必须显式 pathRewrite 把 /api 加回去
 app.use('/api', createProxyMiddleware({
   target: 'http://localhost:3001',
   changeOrigin: true,
-  // 不重写路径，直接转发 /api/... 到后端
+  pathRewrite: (path, req) => {
+    // v3 自动去掉了 /api 前缀，这里加回去
+    return '/api' + path;
+  },
 }));
 
 // ─── 前端静态文件（禁用缓存确保每次拿到最新版本）───
