@@ -1,17 +1,28 @@
 node_modules/
-dist/
 .env
 .env.local
-*.log
 .DS_Store
 Thumbs.db
 
-# Database
+# 前端构建产物（服务器上会重新 build）
+frontend/dist/
+
+# 数据库文件（服务器上会自动创建）
 *.sqlite
 *.sqlite3
 
-# Vercel data persistence
-data/
+# 日志文件
+*.log
+backend_log.txt
+cf_log.txt
+cf_new.txt
+cf_out.txt
+cloudflared_log.txt
+gateway_log.txt
+cf_tunnel.log
+
+# Cloudflare / ngrok 临时文件
+start-ngrok.bat
 
 # IDE
 .vscode/
@@ -19,6 +30,9 @@ data/
 
 # WorkBuddy
 .workbuddy/
+
+# Vercel
+.vercel
 
 # OS
 .DS_Store

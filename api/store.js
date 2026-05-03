@@ -143,7 +143,6 @@ function insertOrder(data) {
     customer_name: data.customer_name || '',
     customer_address: data.customer_address || '',
     customer_phone: data.customer_phone || '',
-    customer_postal_code: data.customer_postal_code || '',
     total_amount: Number(data.total_amount) || 0,
     status: 'pending',
     created_at: now,

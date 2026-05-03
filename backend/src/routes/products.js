@@ -2,25 +2,54 @@ const express = require('express');
 const router = express.Router();
 const { runQuery, runInsert, getDB } = require('../db/init');
 
+// Helper: parse images field (JSON string → array)
+function parseImages(imagesField) {
+  if (!imagesField) return [];
+  if (Array.isArray(imagesField)) return imagesField;
+  try {
+    const parsed = JSON.parse(imagesField);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+// Helper: parse variant_options (JSON string → array)
+function parseVariantOptions(voField) {
+  if (!voField) return [];
+  if (Array.isArray(voField)) return voField;
+  try {
+    const parsed = JSON.parse(voField);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 // Get all products
 router.get('/', (req, res) => {
   try {
     const products = runQuery(`
-      SELECT p.*, 
-        (SELECT COUNT(*) FROM product_variants WHERE product_id = p.id) as variant_count,
-        (SELECT GROUP_CONCAT(DISTINCT color) FROM product_variants WHERE product_id = p.id AND color IS NOT NULL AND color != '') as colors
-      FROM products p
-      ORDER BY p.created_at DESC
+      SELECT * FROM products
+      ORDER BY created_at DESC
     `);
     
-    res.json(products || []);
+    const result = (products || []).map(p => ({
+      ...p,
+      images: parseImages(p.images),
+      image_url: parseImages(p.images)[0] || null,
+      variant_options: parseVariantOptions(p.variant_options),
+      box_qty: p.box_qty || 1,
+    }));
+    
+    res.json(result);
   } catch (err) {
     console.error('Error fetching products:', err);
     res.status(500).json({ error: 'Failed to fetch products' });
   }
 });
 
-// Get single product with variants
+// Get single product
 router.get('/:id', (req, res) => {
   try {
     const product = runQuery(
@@ -32,14 +61,14 @@ router.get('/:id', (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
     
-    const variants = runQuery(
-      'SELECT * FROM product_variants WHERE product_id = ?',
-      [req.params.id]
-    );
+    const p = product[0];
     
     res.json({
-      ...product[0],
-      variants: variants || []
+      ...p,
+      images: parseImages(p.images),
+      image_url: parseImages(p.images)[0] || null,
+      variant_options: parseVariantOptions(p.variant_options),
+      box_qty: p.box_qty || 1,
     });
   } catch (err) {
     console.error('Error fetching product:', err);
@@ -51,23 +80,45 @@ router.get('/:id', (req, res) => {
 router.post('/', (req, res) => {
   try {
     const { 
-      name, name_en, brand, description, description_en, price, image_url, category,
-      colors, sizes, specifications, materials,
-      custom1_name, custom1_values, custom2_name, custom2_values, custom3_name, custom3_values
+      name, name_en, brand, description, description_en, price, images, category,
+      variant_options, box_qty
     } = req.body;
     
     if (!name || !price) {
       return res.status(400).json({ error: 'Name and price are required' });
     }
+
+    const boxQty = Math.max(1, parseInt(box_qty) || 1);
+
+    // images can be: array of URLs, or JSON string, or null
+    let imagesJSON = null;
+    if (images) {
+      if (Array.isArray(images)) {
+        imagesJSON = JSON.stringify(images);
+      } else if (typeof images === 'string') {
+        try {
+          const parsed = JSON.parse(images);
+          imagesJSON = Array.isArray(parsed) ? images : JSON.stringify([images]);
+        } catch {
+          imagesJSON = JSON.stringify([images]);
+        }
+      }
+    }
+
+    // variant_options: array of {name, nameEn, values: string[]}
+    let voJSON = null;
+    if (variant_options) {
+      if (Array.isArray(variant_options)) {
+        voJSON = JSON.stringify(variant_options);
+      } else if (typeof variant_options === 'string') {
+        voJSON = variant_options;
+      }
+    }
     
     const id = runInsert(
-      `INSERT INTO products (name, name_en, brand, description, description_en, price, image_url, category,
-        colors, sizes, specifications, materials,
-        custom1_name, custom1_values, custom2_name, custom2_values, custom3_name, custom3_values)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [name, name_en, brand, description, description_en, price, image_url, category,
-       colors, sizes, specifications, materials,
-       custom1_name, custom1_values, custom2_name, custom2_values, custom3_name, custom3_values]
+      `INSERT INTO products (name, name_en, brand, description, description_en, price, images, category, variant_options, box_qty)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name, name_en || null, brand || null, description || null, description_en || null, price, imagesJSON, category || null, voJSON, boxQty]
     );
     
     res.json({ id, message: 'Product created successfully' });
@@ -81,20 +132,42 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { 
-      name, name_en, brand, description, description_en, price, image_url, category,
-      colors, sizes, specifications, materials,
-      custom1_name, custom1_values, custom2_name, custom2_values, custom3_name, custom3_values
+      name, name_en, brand, description, description_en, price, images, category,
+      variant_options, box_qty
     } = req.body;
     const db = getDB();
+
+    const boxQty = Math.max(1, parseInt(box_qty) || 1);
+
+    // images
+    let imagesJSON = null;
+    if (images) {
+      if (Array.isArray(images)) {
+        imagesJSON = JSON.stringify(images);
+      } else if (typeof images === 'string') {
+        try {
+          const parsed = JSON.parse(images);
+          imagesJSON = Array.isArray(parsed) ? images : JSON.stringify([images]);
+        } catch {
+          imagesJSON = JSON.stringify([images]);
+        }
+      }
+    }
+    
+    // variant_options
+    let voJSON = null;
+    if (variant_options) {
+      if (Array.isArray(variant_options)) {
+        voJSON = JSON.stringify(variant_options);
+      } else if (typeof variant_options === 'string') {
+        voJSON = variant_options;
+      }
+    }
     
     db.run(
-      `UPDATE products SET name=?, name_en=?, brand=?, description=?, description_en=?, price=?, image_url=?, category=?,
-        colors=?, sizes=?, specifications=?, materials=?,
-        custom1_name=?, custom1_values=?, custom2_name=?, custom2_values=?, custom3_name=?, custom3_values=?
+      `UPDATE products SET name=?, name_en=?, brand=?, description=?, description_en=?, price=?, images=?, category=?, variant_options=?, box_qty=?
        WHERE id=?`,
-      [name, name_en, brand, description, description_en, price, image_url, category,
-       colors, sizes, specifications, materials,
-       custom1_name, custom1_values, custom2_name, custom2_values, custom3_name, custom3_values, req.params.id]
+      [name, name_en || null, brand || null, description || null, description_en || null, price, imagesJSON, category || null, voJSON, boxQty, req.params.id]
     );
     
     res.json({ message: 'Product updated successfully' });
@@ -108,16 +181,32 @@ router.put('/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
   try {
     const db = getDB();
-    
-    // Delete variants first
-    db.run('DELETE FROM product_variants WHERE product_id = ?', [req.params.id]);
-    // Delete product
     db.run('DELETE FROM products WHERE id = ?', [req.params.id]);
-    
     res.json({ message: 'Product deleted successfully' });
   } catch (err) {
     console.error('Error deleting product:', err);
     res.status(500).json({ error: 'Failed to delete product' });
+  }
+});
+
+// Batch delete products
+router.post('/batch-delete', (req, res) => {
+  try {
+    const { ids } = req.body;
+    
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids array is required' });
+    }
+    
+    const db = getDB();
+    const placeholders = ids.map(() => '?').join(',');
+    
+    db.run(`DELETE FROM products WHERE id IN (${placeholders})`, ids);
+    
+    res.json({ message: `${ids.length} products deleted successfully` });
+  } catch (err) {
+    console.error('Error batch deleting products:', err);
+    res.status(500).json({ error: 'Failed to batch delete products' });
   }
 });
 

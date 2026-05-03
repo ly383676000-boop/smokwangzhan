@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Check, Heart, Share2, Tag, Package } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Check, Heart, Share2, Tag, Package, Box } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useCart } from '../context/CartContext';
+import { useTheme } from '../context/ThemeContext';
 import VariantSelector from './VariantSelector';
 import QuantitySelector from './QuantitySelector';
 import { Product, ProductVariant } from '../types';
@@ -13,21 +14,14 @@ const ProductDetail: React.FC = () => {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const { addItem } = useCart();
+  const { theme } = useTheme();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [variants, setVariants] = useState<ProductVariant>({
-    color: '',
-    size: '',
-    specification: '',
-    material: '',
-    custom1: { name: '', value: '' },
-    custom2: { name: '', value: '' },
-    custom3: { name: '', value: '' },
-    notes: '',
-  });
+  const [boxes, setBoxes] = useState(1);
+  const [variants, setVariants] = useState<ProductVariant>({ notes: '' });
   const [addedToCart, setAddedToCart] = useState(false);
 
   useEffect(() => {
@@ -39,12 +33,6 @@ const ProductDetail: React.FC = () => {
       const apiProduct = await fetchProduct(Number(id));
       const mapped = mapApiProduct(apiProduct);
       setProduct(mapped);
-      setVariants(prev => ({
-        ...prev,
-        custom1: mapped.custom1_name ? { name: mapped.custom1_name, value: '' } : { name: '', value: '' },
-        custom2: mapped.custom2_name ? { name: mapped.custom2_name, value: '' } : { name: '', value: '' },
-        custom3: mapped.custom3_name ? { name: mapped.custom3_name, value: '' } : { name: '', value: '' },
-      }));
     } catch (err) {
       console.error('Failed to load product:', err);
     } finally {
@@ -54,21 +42,21 @@ const ProductDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 py-10">
+      <div className="max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-20 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
           <div className="space-y-4">
-            <div className="aspect-[4/5] bg-gradient-to-br from-[#F0F2F4] to-[#E8ECEF] rounded-2xl animate-pulse" />
+            <div className="aspect-[4/5] rounded-2xl animate-pulse" style={{ background: theme.name === 'graffiti' ? 'linear-gradient(to bottom right, #1A1A1A, #2A2A2A)' : 'linear-gradient(to bottom right, #F0F2F4, #E8ECEF)' }} />
             <div className="flex gap-3">
-              {[1,2,3].map(i => <div key={i} className="w-20 h-20 bg-[#F0F2F4] rounded-xl animate-pulse" />)}
+              {[1,2,3].map(i => <div key={i} className="w-20 h-20 rounded-xl animate-pulse" style={{ backgroundColor: theme.filterBorder }} />)}
             </div>
           </div>
           <div className="space-y-5 pt-4">
-            <div className="h-5 bg-[#F0F2F4] rounded-full animate-pulse w-1/4" />
-            <div className="h-8 bg-[#F0F2F4] rounded-full animate-pulse w-4/5" />
-            <div className="h-8 bg-[#F0F2F4] rounded-full animate-pulse w-3/5" />
-            <div className="h-10 bg-[#F0F2F4] rounded-full animate-pulse w-1/3" />
+            <div className="h-5 rounded-full animate-pulse w-1/4" style={{ backgroundColor: theme.filterBorder }} />
+            <div className="h-8 rounded-full animate-pulse w-4/5" style={{ backgroundColor: theme.filterBorder }} />
+            <div className="h-8 rounded-full animate-pulse w-3/5" style={{ backgroundColor: theme.filterBorder }} />
+            <div className="h-10 rounded-full animate-pulse w-1/3" style={{ backgroundColor: theme.filterBorder }} />
             <div className="space-y-2 pt-4">
-              {[1,2,3].map(i => <div key={i} className="h-4 bg-[#F0F2F4] rounded-full animate-pulse" />)}
+              {[1,2,3].map(i => <div key={i} className="h-4 rounded-full animate-pulse" style={{ backgroundColor: theme.filterBorder }} />)}
             </div>
           </div>
         </div>
@@ -78,12 +66,12 @@ const ProductDetail: React.FC = () => {
 
   if (!product) {
     return (
-      <div className="max-w-[1400px] mx-auto px-4 py-20 text-center">
-        <div className="w-16 h-16 bg-[#F8F9FA] rounded-full flex items-center justify-center mx-auto mb-4">
-          <Package className="w-8 h-8 text-[#DEE2E6]" />
+      <div className="max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-20 py-20 text-center">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: theme.name === 'graffiti' ? '#1A1A1A' : '#F8F9FA' }}>
+          <Package className="w-8 h-8" style={{ color: theme.name === 'graffiti' ? '#444' : '#DEE2E6' }} />
         </div>
-        <p className="text-[#6C757D] text-lg mb-4">{t.home.productNotFound}</p>
-        <button onClick={() => navigate('/')} className="btn-primary">
+        <p className="text-lg mb-4" style={{ color: theme.name === 'graffiti' ? '#888' : '#6C757D' }}>{t.home.productNotFound}</p>
+        <button onClick={() => navigate('/')} className="px-7 py-3.5 rounded-lg font-semibold text-white" style={{ backgroundColor: theme.btnPrimary, fontFamily: 'Poppins, sans-serif' }}>
           {t.home.backToHome}
         </button>
       </div>
@@ -91,27 +79,27 @@ const ProductDetail: React.FC = () => {
   }
 
   const images = product.images && product.images.length > 0 ? product.images : [product.image];
-  const isVariantComplete =
-    (!product.colors.length || variants.color) &&
-    (!product.sizes.length || variants.size) &&
-    (!product.specifications.length || variants.specification) &&
-    (!product.materials.length || variants.material);
+  const options = (product.variantOptions || []).filter(opt => opt.values && opt.values.length > 0);
+
+  // Check if all required options are selected
+  const isVariantComplete = options.every(opt => variants[opt.name]);
 
   const handleAddToCart = () => {
     if (!isVariantComplete) return;
-    addItem(product, variants, quantity);
+    addItem(product, variants, boxes);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 py-8">
+    <div className="max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-20 py-8">
       {/* Breadcrumb */}
       <button
         onClick={() => navigate('/')}
-        className="inline-flex items-center gap-2 text-sm text-[#6C757D] hover:text-[#1B4332] mb-8 transition-colors group"
+        className="inline-flex items-center gap-2 text-sm mb-8 transition-colors group"
+        style={{ color: theme.name === 'graffiti' ? '#888' : '#6C757D' }}
       >
-        <span className="w-7 h-7 bg-white rounded-lg border border-[#E8ECEF] flex items-center justify-center group-hover:border-[#1B4332]/30 transition-colors">
+        <span className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors" style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.filterBorder}` }}>
           <ArrowLeft className="w-3.5 h-3.5" />
         </span>
         <span className="font-medium">{t.product.backToProducts}</span>
@@ -119,11 +107,15 @@ const ProductDetail: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
         {/* ── Left: Image Gallery ── */}
-        <div className="space-y-4">
+        <div className="space-y-4 max-w-md mx-auto lg:mx-0">
           {/* Main Image */}
           <div
-            className="aspect-[4/5] rounded-2xl overflow-hidden bg-[#F8F9FA] border border-[#E8ECEF]"
-            style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}
+            className="aspect-square rounded-2xl overflow-hidden"
+            style={{
+              backgroundColor: theme.name === 'graffiti' ? '#1A1A1A' : '#F8F9FA',
+              border: `1px solid ${theme.filterBorder}`,
+              boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+            }}
           >
             <img
               src={images[selectedImage]}
@@ -136,32 +128,32 @@ const ProductDetail: React.FC = () => {
             />
           </div>
 
-          {/* Thumbnails */}
-          {images.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-1">
-              {images.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedImage(idx)}
-                  className={`flex-shrink-0 w-[72px] h-[72px] rounded-xl overflow-hidden border-2 transition-all duration-200 ${
-                    selectedImage === idx
-                      ? 'border-[#1B4332] shadow-md'
-                      : 'border-transparent hover:border-[#ADB5BD]'
-                  }`}
-                >
-                  <img
-                    src={img}
-                    alt={`Thumbnail ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        'https://via.placeholder.com/72x72/E8ECEF/ADB5BD?text=No';
-                    }}
-                  />
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Thumbnails - always in DOM, visibility controlled by CSS */}
+          <div
+            className="flex gap-3 overflow-x-auto pb-1"
+            style={{ display: images.length > 1 ? 'flex' : 'none' }}
+          >
+            {images.map((img, idx) => (
+              <button
+                key={idx}
+                onClick={() => setSelectedImage(idx)}
+                className={`flex-shrink-0 w-[72px] h-[72px] rounded-xl overflow-hidden border-2 transition-all duration-200`}
+                style={{
+                  borderColor: selectedImage === idx ? theme.filterActive : 'transparent',
+                }}
+              >
+                <img
+                  src={img}
+                  alt={`Thumbnail ${idx + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src =
+                      'https://via.placeholder.com/72x72/E8ECEF/ADB5BD?text=No';
+                  }}
+                />
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── Right: Product Info ── */}
@@ -170,12 +162,16 @@ const ProductDetail: React.FC = () => {
           <div className="flex items-center gap-3 flex-wrap">
             <span
               className="px-3 py-1.5 text-xs font-bold text-white rounded-lg tracking-wider uppercase"
-              style={{ background: 'linear-gradient(135deg, #1B4332, #2D6A4F)' }}
+              style={{ background: theme.productTagBg, color: theme.productTagText }}
             >
               {product.brand}
             </span>
-            <span className="flex items-center gap-1.5 text-xs text-[#ADB5BD] font-mono">
-              <Tag className="w-3 h-3" />
+            <span className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-bold font-mono tracking-wider" style={{
+              color: theme.name === 'graffiti' ? '#FF6B35' : '#FFFFFF',
+              backgroundColor: theme.name === 'graffiti' ? 'rgba(255,107,53,0.18)' : '#1B4332',
+              border: `1.5px solid ${theme.name === 'graffiti' ? 'rgba(255,107,53,0.4)' : 'rgba(27,67,50,0.5)'}`,
+            }}>
+              <Tag className="w-4 h-4" />
               {product.sku}
             </span>
           </div>
@@ -183,111 +179,165 @@ const ProductDetail: React.FC = () => {
           {/* Name */}
           <div>
             <h1
-              className="text-2xl lg:text-3xl font-bold text-[#212529] leading-tight mb-1"
-              style={{ fontFamily: 'Poppins, sans-serif' }}
+              className="text-2xl lg:text-3xl font-bold leading-tight mb-1"
+              style={{ fontFamily: 'Poppins, sans-serif', color: theme.cardText }}
             >
               {language === 'en' ? product.nameEn : product.name}
             </h1>
-            {language === 'en' && product.name !== product.nameEn && (
-              <p className="text-sm text-[#ADB5BD]">{product.name}</p>
-            )}
+            <p
+              className="text-sm"
+              style={{
+                color: theme.name === 'graffiti' ? '#555' : '#ADB5BD',
+                display: (language === 'en' && product.name !== product.nameEn) ? 'block' : 'none',
+              }}
+            >
+              {product.name}
+            </p>
           </div>
 
           {/* Price */}
           <div className="flex items-baseline gap-3">
             <span
-              className="text-4xl font-bold text-[#1B4332]"
-              style={{ fontFamily: "'Roboto Mono', monospace" }}
+              className="text-4xl font-bold"
+              style={{ fontFamily: "'Roboto Mono', monospace", color: theme.cardPrice }}
             >
               ${product.price.toFixed(2)}
             </span>
-            <span className="text-sm text-[#ADB5BD]">/ {language === 'en' ? 'unit' : '件'}</span>
+            <span className="text-sm" style={{ color: theme.name === 'graffiti' ? '#555' : '#ADB5BD' }}>/ {language === 'en' ? 'unit' : '件'}</span>
+          </div>
+
+          {/* Box Info */}
+          <div
+            className="rounded-xl p-4 flex items-center gap-4"
+            style={{ backgroundColor: theme.name === 'graffiti' ? '#1A1A1A' : '#F8F9FA', border: `1px solid ${theme.filterBorder}` }}
+          >
+            <div className="flex items-center gap-2">
+              <Box className="w-5 h-5" style={{ color: theme.name === 'graffiti' ? '#39FF14' : '#1B4332' }} />
+              <span className="text-sm font-semibold" style={{ color: theme.cardText }}>
+                {language === 'en' ? 'Per Carton' : '每箱数量'}
+              </span>
+            </div>
+            <span
+              className="px-3 py-1 rounded-lg text-base font-bold"
+              style={{ backgroundColor: theme.name === 'graffiti' ? '#39FF14' : '#1B4332', color: '#FFFFFF', fontFamily: "'Roboto Mono', monospace" }}
+            >
+              {product.boxQty || 1} {language === 'en' ? 'pcs' : '件/箱'}
+            </span>
           </div>
 
           {/* Description */}
           {(product.description || product.descriptionEn) && (
-            <div className="bg-[#F8F9FA] rounded-xl p-4 border border-[#E8ECEF]">
-              <h2 className="text-xs font-semibold text-[#ADB5BD] uppercase tracking-wider mb-2">
+            <div className="rounded-xl p-4" style={{ backgroundColor: theme.name === 'graffiti' ? '#1A1A1A' : '#F8F9FA', border: `1px solid ${theme.filterBorder}` }}>
+              <h2 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: theme.name === 'graffiti' ? '#555' : '#ADB5BD' }}>
                 {t.product.details}
               </h2>
-              <p className="text-[#495057] leading-relaxed text-sm">
+              <p className="leading-relaxed text-sm" style={{ color: theme.name === 'graffiti' ? '#AAA' : '#495057' }}>
                 {language === 'en' ? product.descriptionEn : product.description}
               </p>
             </div>
           )}
 
           {/* Variant Selector */}
-          <div className="bg-white rounded-xl p-5 border border-[#E8ECEF]">
-            <h2 className="text-xs font-semibold text-[#ADB5BD] uppercase tracking-wider mb-4">
-              {language === 'en' ? 'Options & Customization' : '规格与定制'}
-            </h2>
-            <VariantSelector
-              variants={variants}
-              onChange={setVariants}
-              product={{
-                colors: product.colors,
-                sizes: product.sizes,
-                specifications: product.specifications,
-                materials: product.materials,
-                custom1_name: product.custom1_name,
-                custom1_values: product.custom1_values,
-                custom2_name: product.custom2_name,
-                custom2_values: product.custom2_values,
-                custom3_name: product.custom3_name,
-                custom3_values: product.custom3_values,
-              }}
-            />
-          </div>
+          {options.length > 0 && (
+            <div className="rounded-xl p-5" style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.filterBorder}` }}>
+              <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: theme.name === 'graffiti' ? '#555' : '#ADB5BD' }}>
+                {language === 'en' ? 'Options & Customization' : '规格与定制'}
+              </h2>
+              <VariantSelector
+                variants={variants}
+                onChange={setVariants}
+                options={options}
+              />
+            </div>
+          )}
 
-          {/* Quantity */}
-          <div className="flex items-center gap-6">
-            <label className="text-sm font-semibold text-[#212529] whitespace-nowrap">
-              {t.product.quantity}
-            </label>
-            <QuantitySelector value={quantity} onChange={setQuantity} />
+          {/* Quantity - Box based */}
+          <div
+            className="rounded-xl p-5"
+            style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.filterBorder}` }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-sm font-semibold" style={{ color: theme.cardText }}>
+                {language === 'en' ? 'Order Quantity' : '订购数量'}
+              </label>
+              <span className="text-xs" style={{ color: theme.name === 'graffiti' ? '#555' : '#ADB5BD' }}>
+                {language === 'en' ? 'Enter number of cartons' : '输入箱数'}
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <label className="text-sm font-medium whitespace-nowrap" style={{ color: theme.name === 'graffiti' ? '#AAA' : '#6C757D' }}>
+                {language === 'en' ? 'Cartons' : '箱数'}
+              </label>
+              <QuantitySelector
+                value={boxes}
+                onChange={(val: number) => {
+                  setBoxes(val);
+                  setQuantity(val * (product.boxQty || 1));
+                }}
+              />
+            </div>
+            <div
+              className="mt-3 px-4 py-2.5 rounded-lg text-center"
+              style={{ backgroundColor: theme.name === 'graffiti' ? '#1A1A1A' : '#F0FDF4', border: `1px solid ${theme.name === 'graffiti' ? '#333' : '#BBF7D0'}` }}
+            >
+              <span className="text-xs" style={{ color: theme.name === 'graffiti' ? '#888' : '#6C757D' }}>
+                {language === 'en' ? 'Total' : '合计'}
+              </span>
+              <span
+                className="ml-2 text-lg font-bold"
+                style={{ fontFamily: "'Roboto Mono', monospace", color: theme.name === 'graffiti' ? '#39FF14' : '#1B4332' }}
+              >
+                {quantity} {language === 'en' ? 'units' : '件'}
+              </span>
+              <span className="text-xs ml-1" style={{ color: theme.name === 'graffiti' ? '#555' : '#ADB5BD' }}>
+                ({boxes} {language === 'en' ? 'carton(s)' : '箱'} × {product.boxQty || 1})
+              </span>
+            </div>
           </div>
 
           {/* Add to Cart */}
           <div className="space-y-3">
             <button
               onClick={handleAddToCart}
-              disabled={!isVariantComplete}
-              className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-3 transition-all duration-200 ${
-                !isVariantComplete
-                  ? 'bg-[#E8ECEF] text-[#ADB5BD] cursor-not-allowed'
+              disabled={options.length > 0 && !isVariantComplete}
+              className="w-full py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                backgroundColor: (options.length > 0 && !isVariantComplete)
+                  ? (theme.name === 'graffiti' ? '#2A2A2A' : '#E8ECEF')
                   : addedToCart
-                  ? 'bg-green-500 text-white'
-                  : 'bg-[#1B4332] text-white hover:bg-[#143728] shadow-lg hover:shadow-xl hover:-translate-y-0.5'
-              }`}
-              style={{ fontFamily: 'Poppins, sans-serif' }}
+                  ? '#22C55E'
+                  : theme.addBtnBg,
+                color: (options.length > 0 && !isVariantComplete)
+                  ? (theme.name === 'graffiti' ? '#555' : '#ADB5BD')
+                  : '#FFFFFF',
+                cursor: (options.length > 0 && !isVariantComplete) ? 'not-allowed' : 'pointer',
+              }}
             >
-              {addedToCart ? (
-                <>
-                  <Check className="w-5 h-5" />
-                  {t.product.addedToCart}
-                </>
-              ) : (
-                <>
-                  <ShoppingCart className="w-5 h-5" />
-                  {t.product.addToCart}
-                </>
-              )}
+              {/* Always render both icons, toggle visibility with CSS to avoid Fragment insertBefore errors */}
+              <Check className="w-6 h-6" style={{ display: addedToCart ? 'block' : 'none' }} />
+              <ShoppingCart className="w-6 h-6" style={{ display: addedToCart ? 'none' : 'block' }} />
+              <span>{addedToCart ? t.product.addedToCart : t.product.addToCart}</span>
             </button>
 
-            {!isVariantComplete && (
-              <p className="text-xs text-[#ADB5BD] text-center">
-                {t.product.selectAllOptions}
-              </p>
-            )}
+            <p
+              className="text-xs text-center"
+              style={{
+                color: theme.name === 'graffiti' ? '#555' : '#ADB5BD',
+                display: (options.length > 0 && !isVariantComplete) ? 'block' : 'none',
+              }}
+            >
+              {t.product.selectAllOptions}
+            </p>
           </div>
 
           {/* Secondary Actions */}
-          <div className="flex items-center gap-5 pt-1 border-t border-[#E8ECEF]">
-            <button className="flex items-center gap-2 text-[#6C757D] hover:text-[#1B4332] transition-colors">
+          <div className="flex items-center gap-5 pt-1" style={{ borderTop: `1px solid ${theme.filterBorder}` }}>
+            <button className="flex items-center gap-2 transition-colors" style={{ color: theme.name === 'graffiti' ? '#888' : '#6C757D' }}>
               <Heart className="w-4 h-4" />
               <span className="text-sm">{t.product.wishlist}</span>
             </button>
-            <button className="flex items-center gap-2 text-[#6C757D] hover:text-[#1B4332] transition-colors">
+            <button className="flex items-center gap-2 transition-colors" style={{ color: theme.name === 'graffiti' ? '#888' : '#6C757D' }}>
               <Share2 className="w-4 h-4" />
               <span className="text-sm">{t.product.share}</span>
             </button>

@@ -6,6 +6,8 @@ const productsRouter = require('./routes/products');
 const variantsRouter = require('./routes/variants');
 const ordersRouter = require('./routes/orders');
 const uploadRouter = require('./routes/upload');
+const settingsRouter = require('./routes/settings');
+const authRouter = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -23,14 +25,24 @@ app.use('/api/products', productsRouter);
 app.use('/api/variants', variantsRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/upload', uploadRouter);
+app.use('/api/settings', settingsRouter);
+app.use('/api/auth', authRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Smoke Shop API is running' });
 });
 
-// 404 handler
-app.use((req, res) => {
+// Serve frontend SPA - all non-API requests fallback to index.html
+const distPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
+app.use(express.static(distPath));
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(distPath, 'index.html'));
+});
+
+// 404 handler (API only)
+app.use('/api', (req, res) => {
   res.status(404).json({ error: `Route not found: ${req.method} ${req.path}` });
 });
 

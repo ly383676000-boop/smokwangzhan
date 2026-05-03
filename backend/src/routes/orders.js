@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const { runQuery, runInsert, getDB } = require('../db/init');
+const feishuService = require('../services/feishu');
 
 // Create order
 router.post('/', (req, res) => {
   try {
-    const { customer_name, customer_address, customer_phone, customer_postal_code, items, total_amount } = req.body;
+    const { customer_name, customer_address, customer_phone, items, total_amount } = req.body;
 
     if (!customer_name || !customer_address || !items || items.length === 0) {
       return res.status(400).json({ error: 'Customer info and items are required' });
@@ -18,28 +19,38 @@ router.post('/', (req, res) => {
 
     // Insert order
     const orderId = runInsert(
-      `INSERT INTO orders (order_number, customer_name, customer_address, customer_phone, customer_postal_code, total_amount)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [orderNumber, customer_name, customer_address, customer_phone, customer_postal_code, total_amount]
+      `INSERT INTO orders (order_number, customer_name, customer_address, customer_phone, total_amount)
+       VALUES (?, ?, ?, ?, ?)`,
+      [orderNumber, customer_name, customer_address, customer_phone, total_amount]
     );
 
     // Insert order items
     for (const item of items) {
-      const customParams = JSON.stringify({
-        custom1: item.custom_param1,
-        custom2: item.custom_param2,
-        custom3: item.custom_param3,
-        notes: item.notes
-      });
+      const variantInfo = item.variant_info || '{}';
 
       db.run(
         `INSERT INTO order_items 
-         (order_id, product_name, variant_sku, color, size, specification, material, custom_params, quantity, unit_price, subtotal)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [orderId, item.product_name, item.variant_sku, item.color, item.size, item.specification, item.material,
-         customParams, item.quantity, item.unit_price, item.subtotal]
+         (order_id, product_name, variant_info, quantity, unit_price, subtotal)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [orderId, item.product_name, variantInfo, item.quantity, item.unit_price, item.subtotal]
       );
     }
+
+    feishuService.sendOrderNotification({
+      id: orderNumber,
+      customer_name: customer_name,
+      email: req.body.customer_email || '',
+      phone: customer_phone,
+      address: customer_address,
+      country: req.body.customer_country || '',
+      items: items.map(item => ({
+        name: item.product_name,
+        quantity: item.quantity,
+        price: item.unit_price
+      })),
+      total: total_amount,
+      created_at: new Date().toISOString()
+    }).catch(console.error);
 
     res.json({
       order_id: orderId,
@@ -57,7 +68,7 @@ router.get('/', (req, res) => {
   try {
     const orders = runQuery(`
       SELECT o.id, o.order_number, o.customer_name, o.customer_address,
-             o.customer_phone, o.customer_postal_code, o.total_amount,
+             o.customer_phone, o.total_amount,
              o.status, o.created_at,
              (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count
       FROM orders o
@@ -84,8 +95,8 @@ router.get('/:id', (req, res) => {
 
     const orderItems = (items || []).map(row => ({
       ...row,
-      custom_params: (() => {
-        try { return JSON.parse(row.custom_params || '{}'); } catch { return {}; }
+      variant_info: (() => {
+        try { return JSON.parse(row.variant_info || '{}'); } catch { return {}; }
       })()
     }));
 

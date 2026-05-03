@@ -1,238 +1,145 @@
 import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { ProductVariant } from '../types';
+import { useTheme } from '../context/ThemeContext';
+import { ProductVariant, VariantOption } from '../types';
 
 interface VariantSelectorProps {
   variants: ProductVariant;
   onChange: (variants: ProductVariant) => void;
-  product: {
-    colors?: string[];
-    sizes?: string[];
-    specifications?: string[];
-    materials?: string[];
-    custom1_name?: string;
-    custom1_values?: string[];
-    custom2_name?: string;
-    custom2_values?: string[];
-    custom3_name?: string;
-    custom3_values?: string[];
-  };
+  options: VariantOption[];
 }
 
-const colorMap: Record<string, string> = {
-  'Black': '#1A1A1A',
-  'White': '#FFFFFF',
-  'Red': '#E03131',
-  'Blue': '#1971C2',
-  'Green': '#2F9E44',
-  'Yellow': '#F59F00',
-  'Orange': '#E8590C',
-  'Purple': '#7048E8',
-  'Pink': '#E64980',
-  'Brown': '#8B4513',
-  'Gray': '#868E96',
-  'Silver': '#CED4DA',
-  'Gold': '#D4A574',
-  'Navy': '#1864AB',
-  'Teal': '#0B7285',
-  'Cream': '#FFF9DB',
-  'Beige': '#F5F5DC',
-  'Rose': '#C2255C',
-  'Maroon': '#9C1414',
-  'Olive': '#6C6B14',
-  'Dark Brown': '#5C3317',
-  'Walnut': '#7B3F00',
-  'Cherry': '#9B1B30',
-  'Mahogany': '#C04000',
-  'Briar': '#8B6914',
-  'Crystal': '#E0F4FF',
-  'Acrylic': '#E8F5E9',
-  'Carbon Fiber': '#2C2C2C',
-  'Metal': '#8D9DB6',
-  'Ceramic': '#F5F0E8',
-  'Wood': '#DEB887',
-  'Glass': '#B2EBF2',
-  'Silicone': '#FF8FAB',
-  'Rainbow': 'linear-gradient(135deg, #ff0000, #ff7700, #ffff00, #00ff00, #0000ff, #8b00ff)',
-};
+// Detect if an option is likely a color option (by name or values)
+function isColorOption(option: VariantOption): boolean {
+  const colorKeywords = ['color', 'colour', '颜色', '色彩', '色'];
+  const nameLower = option.name.toLowerCase();
+  const nameEnLower = (option.nameEn || '').toLowerCase();
+  return colorKeywords.some(k => nameLower.includes(k) || nameEnLower.includes(k));
+}
 
-const VariantSelector: React.FC<VariantSelectorProps> = ({ variants, onChange, product }) => {
+const VariantSelector: React.FC<VariantSelectorProps> = ({ variants, onChange, options }) => {
   const { t, language } = useLanguage();
+  const { theme } = useTheme();
 
-  const updateVariant = (key: keyof ProductVariant, value: any) => {
+  const updateVariant = (key: string, value: string) => {
     onChange({ ...variants, [key]: value });
   };
 
-  const isLightColor = (color: string) =>
-    ['White', 'Cream', 'Beige', 'Yellow', 'Silver', 'Crystal', 'Acrylic', 'Ceramic', 'Glass'].includes(color);
+  // Select button style helper
+  const btnStyle = (isSelected: boolean) => ({
+    backgroundColor: isSelected ? theme.filterActive : (theme.name === 'graffiti' ? '#1A1A1A' : '#FFFFFF'),
+    color: isSelected ? theme.filterActiveText : (theme.name === 'graffiti' ? '#AAA' : '#495057'),
+    border: `1px solid ${isSelected ? theme.filterActive : (theme.name === 'graffiti' ? '#2A2A2A' : '#DEE2E6')}`,
+  });
+
+  if (!options || options.length === 0) return null;
 
   return (
     <div className="space-y-5">
-      {/* Color Selector */}
-      {product.colors && product.colors.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <label className="text-sm font-semibold text-[#212529]" style={{ fontFamily: 'Poppins, sans-serif' }}>
-              {t.product.color} <span className="text-red-400">*</span>
-            </label>
-            {variants.color && (
-              <span className="text-xs text-[#6C757D] bg-[#E8ECEF] px-2.5 py-1 rounded-full font-medium">
-                {variants.color}
-              </span>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2.5">
-            {product.colors.map((color) => {
-              const bg = colorMap[color] || color;
-              const isGradient = bg.includes('gradient');
-              const selected = variants.color === color;
-              return (
-                <button
-                  key={color}
-                  onClick={() => updateVariant('color', color)}
-                  title={color}
-                  className={`relative w-9 h-9 rounded-full transition-all duration-200 hover:scale-110 ${
-                    selected ? 'scale-110 ring-2 ring-offset-2 ring-[#1B4332]' : 'hover:ring-1 hover:ring-[#ADB5BD]'
-                  }`}
-                  style={{
-                    background: isGradient ? bg : undefined,
-                    backgroundColor: isGradient ? undefined : bg,
-                    border: isLightColor(color) ? '1.5px solid #DEE2E6' : '1.5px solid transparent',
-                  }}
-                >
-                  {selected && (
-                    <span
-                      className="absolute inset-0 flex items-center justify-center text-xs font-bold"
-                      style={{ color: isLightColor(color) ? '#495057' : 'white' }}
-                    >
-                      ✓
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {options.map((option) => {
+        const key = option.name;
+        const selectedValue = variants[key] || '';
+        const label = language === 'en' ? (option.nameEn || option.name) : option.name;
+        const isColor = isColorOption(option);
 
-      {/* Size Selector */}
-      {product.sizes && product.sizes.length > 0 && (
-        <div>
-          <label className="block text-sm font-semibold text-[#212529] mb-3" style={{ fontFamily: 'Poppins, sans-serif' }}>
-            {t.product.size} <span className="text-red-400">*</span>
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {product.sizes.map((size) => (
-              <button
-                key={size}
-                onClick={() => updateVariant('size', size)}
-                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 border ${
-                  variants.size === size
-                    ? 'bg-[#1B4332] text-white border-[#1B4332] shadow-sm'
-                    : 'bg-white text-[#495057] border-[#DEE2E6] hover:border-[#1B4332] hover:text-[#1B4332]'
-                }`}
-              >
-                {size}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Specification Selector */}
-      {product.specifications && product.specifications.length > 0 && (
-        <div>
-          <label className="block text-sm font-semibold text-[#212529] mb-3" style={{ fontFamily: 'Poppins, sans-serif' }}>
-            {t.product.specification} <span className="text-red-400">*</span>
-          </label>
-          <select
-            value={variants.specification}
-            onChange={(e) => updateVariant('specification', e.target.value)}
-            className="w-full px-4 py-2.5 border border-[#DEE2E6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4332] focus:border-transparent bg-white text-[#495057] text-sm transition-all"
-          >
-            <option value="">
-              {language === 'en' ? `Select ${t.product.specification}` : `选择${t.product.specification}`}
-            </option>
-            {product.specifications.map((spec) => (
-              <option key={spec} value={spec}>{spec}</option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* Material Selector */}
-      {product.materials && product.materials.length > 0 && (
-        <div>
-          <label className="block text-sm font-semibold text-[#212529] mb-3" style={{ fontFamily: 'Poppins, sans-serif' }}>
-            {t.product.material} <span className="text-red-400">*</span>
-          </label>
-          <select
-            value={variants.material}
-            onChange={(e) => updateVariant('material', e.target.value)}
-            className="w-full px-4 py-2.5 border border-[#DEE2E6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4332] focus:border-transparent bg-white text-[#495057] text-sm transition-all"
-          >
-            <option value="">
-              {language === 'en' ? `Select ${t.product.material}` : `选择${t.product.material}`}
-            </option>
-            {product.materials.map((mat) => (
-              <option key={mat} value={mat}>{mat}</option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* Custom Parameters */}
-      {[
-        { name: product.custom1_name, values: product.custom1_values, key: 'custom1' as const, variantObj: variants.custom1 },
-        { name: product.custom2_name, values: product.custom2_values, key: 'custom2' as const, variantObj: variants.custom2 },
-        { name: product.custom3_name, values: product.custom3_values, key: 'custom3' as const, variantObj: variants.custom3 },
-      ]
-        .filter((c) => c.name)
-        .map(({ name, values, key, variantObj }) => (
+        return (
           <div key={key}>
-            <label className="block text-sm font-semibold text-[#212529] mb-3" style={{ fontFamily: 'Poppins, sans-serif' }}>
-              {name}
-            </label>
-            {values && values.length > 0 ? (
+            {/* Label */}
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-sm font-semibold" style={{ fontFamily: 'Poppins, sans-serif', color: theme.cardText }}>
+                {label} <span className="text-red-400">*</span>
+              </label>
+              <span
+                className="text-xs px-2.5 py-1 rounded-full font-medium"
+                style={{
+                  color: theme.name === 'graffiti' ? '#AAA' : '#6C757D',
+                  backgroundColor: theme.name === 'graffiti' ? '#2A2A2A' : '#E8ECEF',
+                  display: (selectedValue && isColor) ? 'inline' : 'none',
+                }}
+              >
+                {selectedValue}
+              </span>
+            </div>
+
+            {/* Color options: text labels */}
+            {isColor ? (
               <div className="flex flex-wrap gap-2">
-                {values.map((val) => (
+                {option.values.map((color) => {
+                  const selected = selectedValue === color;
+                  return (
+                    <button
+                      key={color}
+                      onClick={() => updateVariant(key, color)}
+                      title={color}
+                      className="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 hover:scale-105"
+                      style={{
+                        backgroundColor: selected
+                          ? theme.filterActive
+                          : (theme.name === 'graffiti' ? '#1A1A1A' : '#FFFFFF'),
+                        color: selected
+                          ? theme.filterActiveText
+                          : (theme.name === 'graffiti' ? '#AAA' : '#495057'),
+                        border: `1.5px solid ${selected ? theme.filterActive : (theme.name === 'graffiti' ? '#2A2A2A' : '#DEE2E6')}`,
+                      }}
+                    >
+                      {color}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : option.values.length <= 5 ? (
+              /* Few options: pill buttons */
+              <div className="flex flex-wrap gap-2">
+                {option.values.map((val) => (
                   <button
                     key={val}
-                    onClick={() => updateVariant(key, { name: name!, value: val })}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 border ${
-                      variantObj?.value === val
-                        ? 'bg-[#1B4332] text-white border-[#1B4332] shadow-sm'
-                        : 'bg-white text-[#495057] border-[#DEE2E6] hover:border-[#1B4332] hover:text-[#1B4332]'
-                    }`}
+                    onClick={() => updateVariant(key, val)}
+                    className="px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200"
+                    style={btnStyle(selectedValue === val)}
                   >
                     {val}
                   </button>
                 ))}
               </div>
             ) : (
-              <input
-                type="text"
-                value={variantObj?.value || ''}
-                onChange={(e) => updateVariant(key, { name: name!, value: e.target.value })}
-                placeholder={language === 'en' ? `Enter ${name}` : `请输入${name}`}
-                className="w-full px-4 py-2.5 border border-[#DEE2E6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4332] focus:border-transparent text-sm text-[#495057] bg-white transition-all"
-              />
+              /* Many options: dropdown */
+              <select
+                value={selectedValue}
+                onChange={(e) => updateVariant(key, e.target.value)}
+                className="w-full px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent text-sm transition-all"
+                style={{
+                  border: `1px solid ${theme.filterBorder}`,
+                  backgroundColor: theme.name === 'graffiti' ? '#1A1A1A' : '#FFFFFF',
+                  color: theme.name === 'graffiti' ? '#E0E0E0' : '#495057',
+                }}
+              >
+                <option value="">{language === 'en' ? `Select ${label}` : `选择${label}`}</option>
+                {option.values.map((val) => (
+                  <option key={val} value={val}>{val}</option>
+                ))}
+              </select>
             )}
           </div>
-        ))}
+        );
+      })}
 
       {/* Notes */}
       <div>
-        <label className="block text-sm font-medium text-[#6C757D] mb-2">
+        <label className="block text-sm font-medium mb-2" style={{ color: theme.name === 'graffiti' ? '#888' : '#6C757D' }}>
           {language === 'en' ? 'Additional Notes' : '备注'}
-          <span className="ml-1 text-[#ADB5BD] font-normal">({language === 'en' ? 'optional' : '选填'})</span>
+          <span className="ml-1 font-normal" style={{ color: theme.name === 'graffiti' ? '#555' : '#ADB5BD' }}>({language === 'en' ? 'optional' : '选填'})</span>
         </label>
         <textarea
           value={variants.notes || ''}
           onChange={(e) => updateVariant('notes', e.target.value)}
           placeholder={language === 'en' ? 'Any special requirements...' : '特殊要求或备注...'}
           rows={3}
-          className="w-full px-4 py-2.5 border border-[#DEE2E6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4332] focus:border-transparent text-sm text-[#495057] bg-white transition-all resize-none"
+          className="w-full px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent text-sm transition-all resize-none"
+          style={{
+            border: `1px solid ${theme.filterBorder}`,
+            backgroundColor: theme.name === 'graffiti' ? '#1A1A1A' : '#FFFFFF',
+            color: theme.name === 'graffiti' ? '#E0E0E0' : '#495057',
+          }}
         />
       </div>
     </div>

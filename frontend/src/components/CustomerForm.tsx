@@ -11,9 +11,6 @@ interface FormData {
   email: string;
   phone: string;
   address: string;
-  city: string;
-  state: string;
-  zipCode: string;
   country: string;
   notes: string;
 }
@@ -27,9 +24,6 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onValidChange }) => {
     email: '',
     phone: '',
     address: '',
-    city: '',
-    state: '',
-    zipCode: '',
     country: '',
     notes: '',
   });
@@ -67,11 +61,6 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onValidChange }) => {
     // Address is required
     if (!data.address.trim()) {
       newErrors.address = language === 'en' ? 'Address is required' : '请输入地址';
-    }
-
-    // City is required
-    if (!data.city.trim()) {
-      newErrors.city = language === 'en' ? 'City is required' : '请输入城市';
     }
 
     // Country is required
@@ -121,9 +110,12 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onValidChange }) => {
             errors.name ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-[#1B4332]'
           }`}
         />
-        {errors.name && (
-          <p className="mt-1 text-xs text-red-500">{errors.name}</p>
-        )}
+        <p
+          className="mt-1 text-xs text-red-500"
+          style={{ display: errors.name ? 'block' : 'none' }}
+        >
+          {errors.name || ''}
+        </p>
       </div>
 
       {/* Email */}
@@ -141,9 +133,12 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onValidChange }) => {
             errors.email ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-[#1B4332]'
           }`}
         />
-        {errors.email && (
-          <p className="mt-1 text-xs text-red-500">{errors.email}</p>
-        )}
+        <p
+          className="mt-1 text-xs text-red-500"
+          style={{ display: errors.email ? 'block' : 'none' }}
+        >
+          {errors.email || ''}
+        </p>
       </div>
 
       {/* Phone */}
@@ -161,9 +156,35 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onValidChange }) => {
             errors.phone ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-[#1B4332]'
           }`}
         />
-        {errors.phone && (
-          <p className="mt-1 text-xs text-red-500">{errors.phone}</p>
-        )}
+        <p
+          className="mt-1 text-xs text-red-500"
+          style={{ display: errors.phone ? 'block' : 'none' }}
+        >
+          {errors.phone || ''}
+        </p>
+      </div>
+
+      {/* Address */}
+      <div>
+        <label className="block text-sm font-medium text-[#1A1A1A] mb-1.5">
+          {language === 'en' ? 'Address' : '地址'} <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          name="address"
+          value={formData.address}
+          onChange={handleChange}
+          placeholder={language === 'en' ? '5 N MAIN ST' : '请输入您的地址'}
+          className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4332] transition-colors ${
+            errors.address ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-[#1B4332]'
+          }`}
+        />
+        <p
+          className="mt-1 text-xs text-red-500"
+          style={{ display: errors.address ? 'block' : 'none' }}
+        >
+          {errors.address || ''}
+        </p>
       </div>
 
       {/* Country */}
@@ -176,84 +197,17 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onValidChange }) => {
           name="country"
           value={formData.country}
           onChange={handleChange}
-          placeholder={language === 'en' ? 'Enter your country' : '请输入您的国家'}
+          placeholder={language === 'en' ? 'United States' : '请输入您的国家'}
           className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4332] transition-colors ${
             errors.country ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-[#1B4332]'
           }`}
         />
-        {errors.country && (
-          <p className="mt-1 text-xs text-red-500">{errors.country}</p>
-        )}
-      </div>
-
-      {/* City & State Row */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-[#1A1A1A] mb-1.5">
-            {language === 'en' ? 'City' : '城市'} <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            name="city"
-            value={formData.city}
-            onChange={handleChange}
-            placeholder={language === 'en' ? 'City' : '城市'}
-            className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4332] transition-colors ${
-              errors.city ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-[#1B4332]'
-            }`}
-          />
-          {errors.city && (
-            <p className="mt-1 text-xs text-red-500">{errors.city}</p>
-          )}
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-[#1A1A1A] mb-1.5">
-            {language === 'en' ? 'State/Province' : '州/省'}
-          </label>
-          <input
-            type="text"
-            name="state"
-            value={formData.state}
-            onChange={handleChange}
-            placeholder={language === 'en' ? 'State' : '州/省'}
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4332] focus:border-transparent transition-colors"
-          />
-        </div>
-      </div>
-
-      {/* Address */}
-      <div>
-        <label className="block text-sm font-medium text-[#1A1A1A] mb-1.5">
-          {language === 'en' ? 'Street Address' : '详细地址'} <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          name="address"
-          value={formData.address}
-          onChange={handleChange}
-          placeholder={language === 'en' ? 'Enter your street address' : '请输入您的详细地址'}
-          className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4332] transition-colors ${
-            errors.address ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-[#1B4332]'
-          }`}
-        />
-        {errors.address && (
-          <p className="mt-1 text-xs text-red-500">{errors.address}</p>
-        )}
-      </div>
-
-      {/* Zip Code */}
-      <div>
-        <label className="block text-sm font-medium text-[#1A1A1A] mb-1.5">
-          {language === 'en' ? 'Zip/Postal Code' : '邮编'}
-        </label>
-        <input
-          type="text"
-          name="zipCode"
-          value={formData.zipCode}
-          onChange={handleChange}
-          placeholder={language === 'en' ? 'Enter zip code' : '请输入邮编'}
-          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4332] focus:border-transparent transition-colors"
-        />
+        <p
+          className="mt-1 text-xs text-red-500"
+          style={{ display: errors.country ? 'block' : 'none' }}
+        >
+          {errors.country || ''}
+        </p>
       </div>
 
       {/* Notes */}

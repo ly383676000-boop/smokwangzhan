@@ -2,6 +2,12 @@
 // 本地开发时后端跑在 localhost:3001
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
+export interface ApiVariantOption {
+  name: string;
+  nameEn: string;
+  values: string[];
+}
+
 export interface ApiProduct {
   id: number;
   name: string;
@@ -10,44 +16,32 @@ export interface ApiProduct {
   description: string;
   description_en: string;
   price: number;
+  images: string[];
   image_url: string;
   category: string;
-  colors: string;
-  sizes: string;
-  specifications: string;
-  materials: string;
-  custom1_name: string;
-  custom1_values: string;
-  custom2_name: string;
-  custom2_values: string;
-  custom3_name: string;
-  custom3_values: string;
-  variant_count: number;
+  variant_options: ApiVariantOption[];
+  box_qty: number;
   created_at: string;
-}
-
-export interface ApiVariant {
-  id: number;
-  product_id: number;
-  sku: string;
-  color: string;
-  size: string;
-  specification: string;
-  material: string;
-  custom_param1_name: string;
-  custom_param1_value: string;
-  custom_param2_name: string;
-  custom_param2_value: string;
-  custom_param3_name: string;
-  custom_param3_value: string;
-  notes: string;
-  price_modifier: number;
-  stock: number;
-  image_url: string;
 }
 
 // Convert API product to frontend product
 export function mapApiProduct(api: ApiProduct) {
+  const images = api.images && Array.isArray(api.images) ? api.images : [];
+  const image = images[0] || api.image_url || '';
+  // Safety: ensure variant_options is always a proper array
+  let variantOptions: ApiVariantOption[] = [];
+  if (api.variant_options) {
+    if (Array.isArray(api.variant_options)) {
+      variantOptions = api.variant_options;
+    } else if (typeof api.variant_options === 'string') {
+      try {
+        const parsed = JSON.parse(api.variant_options);
+        variantOptions = Array.isArray(parsed) ? parsed : [];
+      } catch { /* ignore */ }
+    }
+  }
+  // Filter out entries with empty name (invalid options)
+  variantOptions = variantOptions.filter(opt => opt && opt.name && opt.name.trim() !== '');
   return {
     id: String(api.id),
     name: api.name || '',
@@ -56,20 +50,12 @@ export function mapApiProduct(api: ApiProduct) {
     descriptionEn: api.description_en || '',
     price: api.price || 0,
     brand: api.brand || '',
-    image: api.image_url || '',
-    images: api.image_url ? [api.image_url] : [],
-    colors: api.colors ? api.colors.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
-    sizes: api.sizes ? api.sizes.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
-    specifications: api.specifications ? api.specifications.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
-    materials: api.materials ? api.materials.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
+    image: image,
+    images: images.length > 0 ? images : (image ? [image] : []),
+    variantOptions: variantOptions,
     sku: api.brand ? api.brand.substring(0, 3).toUpperCase() + '-' + String(api.id).padStart(3, '0') : 'SKU-' + String(api.id).padStart(3, '0'),
     category: api.category || '',
-    custom1_name: api.custom1_name || '',
-    custom1_values: api.custom1_values || '',
-    custom2_name: api.custom2_name || '',
-    custom2_values: api.custom2_values || '',
-    custom3_name: api.custom3_name || '',
-    custom3_values: api.custom3_values || '',
+    boxQty: api.box_qty || 1,
   };
 }
 
@@ -79,7 +65,7 @@ export async function fetchProducts(): Promise<ApiProduct[]> {
   return res.json();
 }
 
-export async function fetchProduct(id: number): Promise<ApiProduct & { variants: ApiVariant[] }> {
+export async function fetchProduct(id: number): Promise<ApiProduct> {
   const res = await fetch(`${API_BASE}/products/${id}`);
   if (!res.ok) throw new Error('Failed to fetch product');
   return res.json();
@@ -94,23 +80,24 @@ export async function fetchCategories(): Promise<string[]> {
   return Array.from(cats);
 }
 
+export async function batchDeleteProducts(ids: number[]): Promise<void> {
+  const res = await fetch(`${API_BASE}/products/batch-delete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids }),
+  });
+  if (!res.ok) throw new Error('Failed to batch delete products');
+  return res.json();
+}
+
 export async function createOrder(orderData: {
   customer_name: string;
   customer_address: string;
   customer_phone: string;
-  customer_postal_code: string;
   total_amount: number;
   items: Array<{
     product_name: string;
-    variant_sku: string;
-    color: string;
-    size: string;
-    specification: string;
-    material: string;
-    custom_param1: string;
-    custom_param2: string;
-    custom_param3: string;
-    notes: string;
+    variant_info: string;
     quantity: number;
     unit_price: number;
     subtotal: number;
@@ -122,5 +109,35 @@ export async function createOrder(orderData: {
     body: JSON.stringify(orderData),
   });
   if (!res.ok) throw new Error('Failed to create order');
+  return res.json();
+}
+
+// Company Settings API
+export interface CompanySettings {
+  company_name: string;
+  company_name_zh: string;
+  whatsapp: string;
+  email: string;
+  address: string;
+  phone: string;
+}
+
+export async function fetchSettings(): Promise<CompanySettings> {
+  const res = await fetch(`${API_BASE}/settings`);
+  if (!res.ok) throw new Error('Failed to fetch settings');
+  return res.json();
+}
+
+export async function updateSettings(settings: Partial<CompanySettings>): Promise<{ success: boolean; settings: CompanySettings }> {
+  const token = localStorage.getItem('admin_token');
+  const res = await fetch(`${API_BASE}/settings`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(settings),
+  });
+  if (!res.ok) throw new Error('Failed to update settings');
   return res.json();
 }

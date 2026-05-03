@@ -1,4 +1,9 @@
 const initSQL = `
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS products (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
@@ -7,41 +12,10 @@ CREATE TABLE IF NOT EXISTS products (
   description TEXT,
   description_en TEXT,
   price REAL NOT NULL,
-  image_url TEXT,
+  images TEXT,
   category TEXT,
-  -- Variant option fields (available choices)
-  colors TEXT,
-  sizes TEXT,
-  specifications TEXT,
-  materials TEXT,
-  custom1_name TEXT,
-  custom1_values TEXT,
-  custom2_name TEXT,
-  custom2_values TEXT,
-  custom3_name TEXT,
-  custom3_values TEXT,
+  variant_options TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS product_variants (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  product_id INTEGER NOT NULL,
-  sku TEXT UNIQUE NOT NULL,
-  color TEXT,
-  size TEXT,
-  specification TEXT,
-  material TEXT,
-  custom_param1_name TEXT,
-  custom_param1_value TEXT,
-  custom_param2_name TEXT,
-  custom_param2_value TEXT,
-  custom_param3_name TEXT,
-  custom_param3_value TEXT,
-  notes TEXT,
-  price_modifier REAL DEFAULT 0,
-  stock INTEGER DEFAULT 100,
-  image_url TEXT,
-  FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -60,18 +34,59 @@ CREATE TABLE IF NOT EXISTS order_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   order_id INTEGER NOT NULL,
   product_name TEXT NOT NULL,
-  variant_sku TEXT NOT NULL,
-  color TEXT,
-  size TEXT,
-  specification TEXT,
-  material TEXT,
-  custom_params TEXT,
+  variant_info TEXT,
   quantity INTEGER NOT NULL,
   unit_price REAL NOT NULL,
   subtotal REAL NOT NULL,
   FOREIGN KEY (order_id) REFERENCES orders(id)
 );
 `;
+
+// Default company settings
+const DEFAULT_SETTINGS = {
+  company_name: 'HONG KONG COOKIES TRADING LIMITED',
+  company_name_zh: '香港曲奇贸易有限公司',
+  whatsapp: '+852 1234 5678',
+  email: 'info@hkcookies.com',
+  address: 'Hong Kong SAR',
+  phone: '+852 1234 5678',
+  admin_password: 'smok2024',
+};
+
+// Migration: add variant_options column if it doesn't exist (for existing DBs)
+// Migration: add box_qty column if it doesn't exist
+// Migration: ensure settings table has default values
+function migrateDB(db) {
+  try {
+    const cols = db.exec("PRAGMA table_info(products)");
+    if (cols.length > 0) {
+      const rows = db.exec("SELECT name FROM pragma_table_info('products')");
+      if (rows.length > 0) {
+        const existingCols = rows[0].values.map(v => v[0]);
+        if (!existingCols.includes('variant_options')) {
+          db.run("ALTER TABLE products ADD COLUMN variant_options TEXT");
+          console.log('Migration: added variant_options column to products');
+        }
+        if (!existingCols.includes('box_qty')) {
+          db.run("ALTER TABLE products ADD COLUMN box_qty INTEGER NOT NULL DEFAULT 1");
+          console.log('Migration: added box_qty column to products (default 1)');
+        }
+      }
+    }
+
+    // Ensure settings have defaults
+    const settingsKeys = Object.keys(DEFAULT_SETTINGS);
+    for (const key of settingsKeys) {
+      const existing = db.exec(`SELECT value FROM settings WHERE key = '${key}'`);
+      if (existing.length === 0 || existing[0].values.length === 0) {
+        db.run(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`, [key, DEFAULT_SETTINGS[key]]);
+        console.log(`Settings initialized: ${key}`);
+      }
+    }
+  } catch (e) {
+    console.log('Migration check skipped:', e.message);
+  }
+}
 
 const fs = require('fs');
 const path = require('path');
@@ -93,9 +108,12 @@ function initDB() {
         const buffer = fs.readFileSync(dbPath);
         db = new SQL.Database(buffer);
         console.log('Database loaded from file.');
+        db.run(initSQL);
+        migrateDB(db);
       } else {
         db = new SQL.Database();
         db.run(initSQL);
+        migrateDB(db);
         console.log('New database created and schema initialized.');
       }
 

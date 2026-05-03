@@ -3,9 +3,10 @@ import { CartItem, CustomerInfo, Product, ProductVariant } from '../types';
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (product: Product, variants: ProductVariant, quantity: number) => void;
+  addItem: (product: Product, variants: ProductVariant, boxes: number) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
+  updateBoxes: (itemId: string, boxes: number) => void;
   clearCart: () => void;
   getTotal: () => number;
   getItemCount: () => number;
@@ -26,30 +27,30 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     email: '',
     phone: '',
     address: '',
-    city: '',
-    state: '',
-    zipCode: '',
     country: '',
     notes: '',
   });
 
-  const addItem = useCallback((product: Product, variants: ProductVariant, quantity: number) => {
+  const addItem = useCallback((product: Product, variants: ProductVariant, boxes: number) => {
+    const boxQty = product.boxQty || 1;
+    const quantity = boxes * boxQty;
+
     setItems(prev => {
       // Check if same product with same variants already exists
       const existingIndex = prev.findIndex(item => 
         item.product.id === product.id &&
-        item.variants.color === variants.color &&
-        item.variants.size === variants.size &&
-        item.variants.specification === variants.specification &&
-        item.variants.material === variants.material
+        JSON.stringify(item.variants) === JSON.stringify(variants)
       );
 
       if (existingIndex >= 0) {
-        // Merge: increase quantity
+        // Merge: increase boxes and recalculate
         const updated = [...prev];
+        const existItem = updated[existingIndex];
+        const newBoxes = existItem.boxes + boxes;
         updated[existingIndex] = {
-          ...updated[existingIndex],
-          quantity: updated[existingIndex].quantity + quantity,
+          ...existItem,
+          boxes: newBoxes,
+          quantity: newBoxes * existItem.boxQty,
         };
         return updated;
       }
@@ -58,6 +59,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         id: generateId(),
         product,
         quantity,
+        boxes,
+        boxQty,
         variants,
         price: product.price,
       };
@@ -69,11 +72,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setItems(prev => prev.filter(item => item.id !== itemId));
   }, []);
 
-  const updateQuantity = useCallback((itemId: string, quantity: number) => {
-    if (quantity < 1) return;
+  const updateQuantity = useCallback((itemId: string, boxes: number) => {
+    if (boxes < 1) return;
     setItems(prev =>
       prev.map(item =>
-        item.id === itemId ? { ...item, quantity } : item
+        item.id === itemId ? { ...item, boxes, quantity: boxes * item.boxQty } : item
       )
     );
   }, []);
@@ -82,8 +85,17 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setItems([]);
     setCustomerInfoState({
       name: '', email: '', phone: '', address: '',
-      city: '', state: '', zipCode: '', country: '', notes: '',
+      country: '', notes: '',
     });
+  }, []);
+
+  const updateBoxes = useCallback((itemId: string, boxes: number) => {
+    if (boxes < 1) return;
+    setItems(prev =>
+      prev.map(item =>
+        item.id === itemId ? { ...item, boxes, quantity: boxes * item.boxQty } : item
+      )
+    );
   }, []);
 
   const getTotal = useCallback(() => {
@@ -104,6 +116,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       addItem,
       removeItem,
       updateQuantity,
+      updateBoxes,
       clearCart,
       getTotal,
       getItemCount,

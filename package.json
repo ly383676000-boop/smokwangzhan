@@ -1,0 +1,25 @@
+{
+  "name": "20260411235243",
+  "version": "1.0.0",
+  "description": "",
+  "main": "gateway.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ly383676000-boop/smokwangzhan.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ly383676000-boop/smokwangzhan/issues"
+  },
+  "homepage": "https://github.com/ly383676000-boop/smokwangzhan#readme",
+  "dependencies": {
+    "express": "^5.2.1",
+    "http-proxy-middleware": "^3.0.5"
+  }
+}
