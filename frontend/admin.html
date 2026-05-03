@@ -222,7 +222,7 @@
           formData.append('image', file);
           
           try {
-            const res = await fetch('http://localhost:3001/api/upload/image', {
+            const res = await fetch('/api/upload/image', {
               method: 'POST',
               body: formData
             });
@@ -237,7 +237,7 @@
             const previewImg = document.getElementById('preview-img');
             const filename = document.getElementById('preview-filename');
             
-            previewImg.src = 'http://localhost:3001' + data.url;
+            previewImg.src = data.url;
             filename.textContent = data.filename;
             preview.classList.remove('hidden');
             
@@ -347,7 +347,7 @@
   </div>
 
   <script>
-    const API_BASE = 'http://localhost:3001/api';
+    const API_BASE = '/api';
 
     // Tab Navigation
     function showTab(tab) {
@@ -429,7 +429,7 @@
           const preview = document.getElementById('image-preview');
           const previewImg = document.getElementById('preview-img');
           const filename = document.getElementById('preview-filename');
-          previewImg.src = 'http://localhost:3001' + product.image_url;
+          previewImg.src = product.image_url;
           filename.textContent = product.image_url.split('/').pop();
           preview.classList.remove('hidden');
         }
