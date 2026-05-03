@@ -21,6 +21,11 @@ app.use('/api', createProxyMiddleware({
   },
 }));
 
+// ─── admin.html 单独提供（在 frontend/ 根目录，不在 dist 里）───
+app.get('/admin.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend', 'admin.html'));
+});
+
 // ─── 前端静态文件（禁用缓存确保每次拿到最新版本）───
 app.use(express.static(path.join(__dirname, 'frontend', 'dist'), {
   setHeaders: (res, filePath) => {
