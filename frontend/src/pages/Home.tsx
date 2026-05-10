@@ -3,9 +3,10 @@ import Header from '../components/Header';
 import ProductGrid from '../components/ProductGrid';
 import Cart from '../components/Cart';
 import { Product } from '../types';
-import { fetchProducts, mapApiProduct, fetchSettings, CompanySettings } from '../services/api';
+import { fetchProducts, mapApiProduct } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
+import { useSettings } from '../context/SettingsContext';
 import { Search, Package } from 'lucide-react';
 
 const Home: React.FC = () => {
@@ -14,13 +15,15 @@ const Home: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [settings, setSettings] = useState<CompanySettings | null>(null);
+  const { settings } = useSettings();
   const { t, language } = useLanguage();
   const { theme } = useTheme();
 
+  // 调试日志
+  console.log('🏠 Home render - settings:', settings);
+
   useEffect(() => {
     loadProducts();
-    loadSettings();
   }, []);
 
   const loadProducts = async () => {
@@ -32,15 +35,6 @@ const Home: React.FC = () => {
       console.error('Failed to load products:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadSettings = async () => {
-    try {
-      const data = await fetchSettings();
-      setSettings(data);
-    } catch (err) {
-      console.error('Failed to load settings:', err);
     }
   };
 
@@ -277,9 +271,10 @@ const Home: React.FC = () => {
                 </div>
                 <div>
                   <div className="font-bold text-sm" style={{ fontFamily: 'Poppins, sans-serif', letterSpacing: '1px', color: theme.footerText }}>
-                    HONG KONG COOKIES
+                    {language === 'en' 
+                      ? (settings?.company_name || 'Company Name') 
+                      : (settings?.company_name_zh || settings?.company_name || '公司名称')}
                   </div>
-                  <div className="text-[10px]" style={{ letterSpacing: '3px', color: theme.footerAccent }}>TRADING LIMITED</div>
                 </div>
               </div>
               <p className="text-sm leading-relaxed" style={{ color: theme.name === 'graffiti' ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.5)' }}>
@@ -321,25 +316,52 @@ const Home: React.FC = () => {
                 {t.footer.contactUs}
               </h4>
               <ul className="space-y-3">
-                {[
-                  { icon: '📱', label: 'WhatsApp', val: settings?.whatsapp || '+852 1234 5678' },
-                  { icon: '📧', label: 'Email', val: settings?.email || 'info@hkcookies.com' },
-                  { icon: '📍', label: 'Address', val: settings?.address || 'Hong Kong SAR' },
-                ].map((item) => (
-                  <li key={item.label} className="flex items-start gap-3">
-                    <span className="text-sm mt-0.5">{item.icon}</span>
+                {settings?.whatsapp && (
+                  <li key="whatsapp" className="flex items-start gap-3">
+                    <span className="text-lg">📱</span>
                     <div>
-                      <div className="text-xs font-medium" style={{ color: theme.footerAccent }}>{item.label}</div>
-                      <div className="text-sm" style={{ color: theme.name === 'graffiti' ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.5)' }}>{item.val}</div>
+                      <span className="text-sm" style={{ color: theme.footerAccent, opacity: 0.8 }}>WhatsApp</span>
+                      <p className="font-medium" style={{ color: theme.footerAccent }}>{settings.whatsapp}</p>
                     </div>
                   </li>
-                ))}
+                )}
+                {settings?.phone && (
+                  <li key="phone" className="flex items-start gap-3">
+                    <span className="text-lg">📞</span>
+                    <div>
+                      <span className="text-sm" style={{ color: theme.footerAccent, opacity: 0.8 }}>Phone</span>
+                      <p className="font-medium" style={{ color: theme.footerAccent }}>{settings.phone}</p>
+                    </div>
+                  </li>
+                )}
+                {settings?.email && (
+                  <li key="email" className="flex items-start gap-3">
+                    <span className="text-lg">📧</span>
+                    <div>
+                      <span className="text-sm" style={{ color: theme.footerAccent, opacity: 0.8 }}>Email</span>
+                      <p className="font-medium" style={{ color: theme.footerAccent }}>{settings.email}</p>
+                    </div>
+                  </li>
+                )}
+                {settings?.address && (
+                  <li key="address" className="flex items-start gap-3">
+                    <span className="text-lg">📍</span>
+                    <div>
+                      <span className="text-sm" style={{ color: theme.footerAccent, opacity: 0.8 }}>Address</span>
+                      <p className="font-medium" style={{ color: theme.footerAccent }}>{settings.address}</p>
+                    </div>
+                  </li>
+                )}
               </ul>
             </div>
           </div>
 
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{t.footer.copyright}</p>
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              © 2026 {language === 'en' 
+                ? (settings?.company_name || 'Company Name') 
+                : (settings?.company_name_zh || settings?.company_name || '公司名称')}
+            </p>
             <p className="text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
               {language === 'en' ? 'All Rights Reserved' : '版权所有'}
             </p>

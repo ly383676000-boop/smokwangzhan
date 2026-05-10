@@ -40,6 +40,16 @@ CREATE TABLE IF NOT EXISTS order_items (
   subtotal REAL NOT NULL,
   FOREIGN KEY (order_id) REFERENCES orders(id)
 );
+
+CREATE TABLE IF NOT EXISTS admin_users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  role TEXT DEFAULT 'editor',
+  is_active INTEGER DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 `;
 
 // Default company settings
@@ -56,8 +66,34 @@ const DEFAULT_SETTINGS = {
 // Migration: add variant_options column if it doesn't exist (for existing DBs)
 // Migration: add box_qty column if it doesn't exist
 // Migration: ensure settings table has default values
+// Migration: create admin_users table and seed default admin
 function migrateDB(db) {
   try {
+    // Add admin_users table if not exists
+    db.run(`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT DEFAULT 'editor',
+        is_active INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Check if admin_users table has is_active column
+    try {
+      const userCols = db.exec("SELECT name FROM pragma_table_info('admin_users')");
+      if (userCols.length > 0) {
+        const existingUserCols = userCols[0].values.map(v => v[0]);
+        if (!existingUserCols.includes('is_active')) {
+          db.run("ALTER TABLE admin_users ADD COLUMN is_active INTEGER DEFAULT 1");
+          console.log('Migration: added is_active column to admin_users');
+        }
+      }
+    } catch (e) { /* table might not exist */ }
+
     const cols = db.exec("PRAGMA table_info(products)");
     if (cols.length > 0) {
       const rows = db.exec("SELECT name FROM pragma_table_info('products')");
@@ -82,6 +118,17 @@ function migrateDB(db) {
         db.run(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`, [key, DEFAULT_SETTINGS[key]]);
         console.log(`Settings initialized: ${key}`);
       }
+    }
+
+    // Seed default admin user if no users exist
+    const userCount = db.exec("SELECT COUNT(*) as cnt FROM admin_users");
+    if (userCount.length === 0 || userCount[0].values[0][0] === 0) {
+      const crypto = require('crypto');
+      // Default password: smok2024
+      const defaultHash = crypto.createHash('sha256').update('smok2024').digest('hex');
+      db.run("INSERT INTO admin_users (username, password_hash, role) VALUES (?, ?, ?)",
+        ['admin', defaultHash, 'admin']);
+      console.log('Default admin user created: admin / smok2024');
     }
   } catch (e) {
     console.log('Migration check skipped:', e.message);

@@ -7,7 +7,8 @@ const variantsRouter = require('./routes/variants');
 const ordersRouter = require('./routes/orders');
 const uploadRouter = require('./routes/upload');
 const settingsRouter = require('./routes/settings');
-const authRouter = require('./routes/auth');
+const { router: authRouter, authMiddleware, adminOnly } = require('./routes/auth');
+const usersRouter = require('./routes/users');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -20,18 +21,20 @@ app.use(express.json());
 const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads');
 app.use('/uploads', express.static(uploadDir));
 
-// Routes
-app.use('/api/products', productsRouter);
-app.use('/api/variants', variantsRouter);
-app.use('/api/orders', ordersRouter);
-app.use('/api/upload', uploadRouter);
-app.use('/api/settings', settingsRouter);
+// Public routes (no auth required)
 app.use('/api/auth', authRouter);
-
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Smoke Shop API is running' });
 });
+
+// Protected routes (require login) - products 路由内部已单独处理认证
+app.use('/api/products', productsRouter);
+app.use('/api/variants', authMiddleware, variantsRouter);
+app.use('/api/orders', authMiddleware, ordersRouter);
+app.use('/api/upload', authMiddleware, uploadRouter);
+// Settings - GET 不需要认证（前台显示用），PUT 需要认证
+app.use('/api/settings', settingsRouter);
+app.use('/api/admin/users', authMiddleware, adminOnly, usersRouter);
 
 // Serve frontend SPA - all non-API requests fallback to index.html
 const distPath = path.join(__dirname, '..', '..', 'frontend', 'dist');

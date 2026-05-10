@@ -72,8 +72,7 @@ export const en = {
     colors: 'Colors',
     apply: 'Apply',
     clear: 'Clear',
-    heroTitle: 'HONG KONG COOKIES',
-    heroSubtitle: 'TRADING LIMITED',
+    heroTitle: 'Company Name',
     heroDesc: 'Premium Glass Pipes, Bongs, Vaporizers & Smoking Accessories',
     heroShipping: 'Worldwide Shipping',
     heroQuality: 'Quality Guaranteed',
@@ -93,7 +92,7 @@ export const en = {
     backToHome: 'Back to Home',
   },
   footer: {
-    companyName: 'HONG KONG COOKIES',
+    companyName: 'Company Name',
     companyDesc: 'Premium smoking accessories and glass pipes supplier. We provide high-quality products with competitive prices for wholesale and retail customers worldwide.',
     quickLinks: 'Quick Links',
     allProducts: 'All Products',
@@ -102,7 +101,7 @@ export const en = {
     wholesale: 'Wholesale',
     contactUs: 'Contact Us',
     followUs: 'Follow Us',
-    copyright: '© 2026 HONG KONG COOKIES TRADING LIMITED. All Rights Reserved.',
+    copyright: '© 2026 All Rights Reserved.',
   },
 };
 

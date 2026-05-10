@@ -37,6 +37,7 @@ export interface CartItem {
   boxQty: number;      // 每箱数量（来自产品）
   variants: ProductVariant;
   price: number;
+  customPrice?: number; // 自定义单价（可选）
 }
 
 // Customer info - matches the form fields

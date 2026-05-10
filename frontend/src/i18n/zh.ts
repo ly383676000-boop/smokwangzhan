@@ -74,8 +74,7 @@ export const zh: TranslationKeys = {
     colors: '颜色',
     apply: '应用',
     clear: '清除',
-    heroTitle: 'HONG KONG COOKIES',
-    heroSubtitle: 'TRADING LIMITED',
+    heroTitle: '公司名称',
     heroDesc: '优质玻璃烟斗、水烟壶、雾化器及烟具配件',
     heroShipping: '全球配送',
     heroQuality: '品质保障',
@@ -95,7 +94,7 @@ export const zh: TranslationKeys = {
     backToHome: '返回首页',
   },
   footer: {
-    companyName: 'HONG KONG COOKIES',
+    companyName: '公司名称',
     companyDesc: '优质烟具和玻璃烟斗供应商。我们以有竞争力的价格为全球批发和零售客户提供高品质产品。',
     quickLinks: '快速链接',
     allProducts: '全部产品',
@@ -104,6 +103,6 @@ export const zh: TranslationKeys = {
     wholesale: '批发',
     contactUs: '联系我们',
     followUs: '关注我们',
-    copyright: '© 2026 HONG KONG COOKIES TRADING LIMITED. 保留所有权利。',
+    copyright: '© 2026 保留所有权利。',
   },
 };

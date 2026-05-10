@@ -8,6 +8,51 @@ const initSqlJs = require('sql.js');
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const DB_PATH = path.join(__dirname, 'src', 'db', 'database.sqlite');
 
+// 初始化 SQL
+const INIT_SQL = `
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS products (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  name_en TEXT,
+  brand TEXT,
+  description TEXT,
+  description_en TEXT,
+  price REAL NOT NULL,
+  images TEXT,
+  category TEXT,
+  variant_options TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_number TEXT UNIQUE NOT NULL,
+  customer_name TEXT NOT NULL,
+  customer_address TEXT NOT NULL,
+  customer_phone TEXT,
+  customer_postal_code TEXT,
+  total_amount REAL NOT NULL,
+  status TEXT DEFAULT 'pending',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL,
+  product_name TEXT NOT NULL,
+  variant_info TEXT,
+  quantity INTEGER NOT NULL,
+  unit_price REAL NOT NULL,
+  subtotal REAL NOT NULL,
+  FOREIGN KEY (order_id) REFERENCES orders(id)
+);
+`;
+
 async function seed() {
   const SQL = await initSqlJs();
 
@@ -19,12 +64,12 @@ async function seed() {
     console.log('Loaded existing database');
   } else {
     db = new SQL.Database();
-    console.log('Created new database');
+    db.run(INIT_SQL);
+    console.log('Created new database with schema');
   }
 
   // 读取产品数据
   const productsFile = path.join(DATA_DIR, 'products.json');
-  const variantsFile = path.join(DATA_DIR, 'variants.json');
 
   if (!fs.existsSync(productsFile)) {
     console.error('No products.json found in data/');
@@ -32,44 +77,30 @@ async function seed() {
   }
 
   const products = JSON.parse(fs.readFileSync(productsFile, 'utf8'));
-  const variants = fs.existsSync(variantsFile)
-    ? JSON.parse(fs.readFileSync(variantsFile, 'utf8'))
-    : [];
-
-  console.log(`Importing ${products.length} products and ${variants.length} variants...`);
+  console.log(`Importing ${products.length} products...`);
 
   // 清空旧数据
-  db.run('DELETE FROM product_variants');
+  db.run('DELETE FROM order_items');
+  db.run('DELETE FROM orders');
   db.run('DELETE FROM products');
 
   // 插入产品
   let inserted = 0;
   for (const p of products) {
     try {
+      const images = p.image ? JSON.stringify([p.image]) : null;
       db.run(
-        `INSERT INTO products (id, name, name_en, brand, description, description_en, price, image_url, category, 
-          colors, sizes, specifications, materials, custom1_name, custom1_values, custom2_name, custom2_values, custom3_name, custom3_values, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO products (name, name_en, brand, description, description_en, price, images, category, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          p.id,
           p.name || p.name_zh || '',
           p.name_en || p.name || '',
           p.brand || '',
           p.description || '',
           p.description_en || p.description || '',
           p.price || 0,
-          p.image || p.image_url || '',
+          images,
           p.category || '',
-          p.colors || '',
-          p.sizes || '',
-          p.specifications || '',
-          p.materials || '',
-          p.custom1_name || '',
-          p.custom1_values || '',
-          p.custom2_name || '',
-          p.custom2_values || '',
-          p.custom3_name || '',
-          p.custom3_values || '',
           p.created_at || new Date().toISOString(),
         ]
       );
@@ -80,47 +111,11 @@ async function seed() {
   }
   console.log(`Inserted ${inserted}/${products.length} products`);
 
-  // 插入变体
-  let varInserted = 0;
-  for (const v of variants) {
-    try {
-      db.run(
-        `INSERT INTO product_variants (id, product_id, sku, color, size, specification, material, 
-          custom_param1_name, custom_param1_value, custom_param2_name, custom_param2_value, 
-          custom_param3_name, custom_param3_value, notes, price_modifier, stock, image_url)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          v.id,
-          v.product_id,
-          v.sku || `SKU-${v.product_id}-${v.id}`,
-          v.color || '',
-          v.size || '',
-          v.specification || '',
-          v.material || '',
-          v.custom_param1_name || '',
-          v.custom_param1_value || '',
-          v.custom_param2_name || '',
-          v.custom_param2_value || '',
-          v.custom_param3_name || '',
-          v.custom_param3_value || '',
-          v.notes || '',
-          v.price_modifier || 0,
-          v.stock || 100,
-          v.image_url || '',
-        ]
-      );
-      varInserted++;
-    } catch (err) {
-      console.error(`Failed to insert variant ${v.id}: ${err.message}`);
-    }
-  }
-  console.log(`Inserted ${varInserted}/${variants.length} variants`);
-
   // 保存数据库
   const data = db.export();
   fs.writeFileSync(DB_PATH, Buffer.from(data));
   console.log(`\n✅ Database saved to ${DB_PATH}`);
-  console.log(`   Products: ${inserted}, Variants: ${varInserted}`);
+  console.log(`   Products: ${inserted}`);
 
   db.close();
 }

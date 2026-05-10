@@ -4,6 +4,7 @@ import { Search, ShoppingCart, Globe, Menu, X, ChevronDown, Palette } from 'luci
 import { useLanguage } from '../context/LanguageContext';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
+import { useSettings } from '../context/SettingsContext';
 
 interface HeaderProps {
   onCartClick: () => void;
@@ -15,10 +16,15 @@ const Header: React.FC<HeaderProps> = ({ onCartClick, onSearch, onCategoryFilter
   const { language, toggleLanguage, t } = useLanguage();
   const { getItemCount } = useCart();
   const { theme, themeName, toggleTheme } = useTheme();
+  const { settings } = useSettings();
   const navigate = useNavigate();
   const itemCount = getItemCount();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+
+  const companyName = language === 'en' 
+    ? (settings?.company_name || 'Company Name') 
+    : (settings?.company_name_zh || settings?.company_name || '公司名称');
 
   return (
     <header style={{ backgroundColor: theme.headerBg, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} className="sticky top-0 z-50">
@@ -31,9 +37,8 @@ const Header: React.FC<HeaderProps> = ({ onCartClick, onSearch, onCategoryFilter
             </div>
             <div className="hidden sm:block">
               <h1 className="font-bold text-base leading-tight" style={{ fontFamily: 'Poppins, sans-serif', letterSpacing: '2px', color: theme.headerText }}>
-                HONG KONG COOKIES
+                {companyName}
               </h1>
-              <p className="text-xs" style={{ letterSpacing: '3px', color: theme.headerAccent }}>TRADING LIMITED</p>
             </div>
           </div>
 
