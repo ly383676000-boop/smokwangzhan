@@ -22,6 +22,7 @@ interface Product {
   images?: string[];
   variant_options?: VariantOption[];
   box_qty?: number;
+  sku?: string;
   created_at?: string;
 }
 
@@ -260,6 +261,7 @@ function ProductsTab({ onRefresh }: { onRefresh: () => void }) {
     name: '', name_en: '', category: '', price: '', description: '', images: [] as string[],
     variant_options: [] as VariantOption[],
     box_qty: '1',
+    sku: '',
   });
 
   const load = useCallback(async () => {
@@ -318,6 +320,7 @@ function ProductsTab({ onRefresh }: { onRefresh: () => void }) {
       price: String(p.price), description: p.description || '', images: existingImages,
       variant_options: existingOptions,
       box_qty: String(p.box_qty || 1),
+      sku: p.sku || '',
     });
     setShowForm(true);
   };
@@ -341,6 +344,7 @@ function ProductsTab({ onRefresh }: { onRefresh: () => void }) {
       name: '', name_en: '', category: '', price: '', description: '', images: [],
       variant_options: DEFAULT_VARIANT_OPTIONS.map(o => ({ ...o, values: [] })),
       box_qty: '1',
+      sku: '',
     });
     load();
     onRefresh();
@@ -363,7 +367,7 @@ function ProductsTab({ onRefresh }: { onRefresh: () => void }) {
             </button>
           )}
           <button
-            onClick={() => { setShowForm(true); setEditing(null); setForm({ name: '', name_en: '', category: '', price: '', description: '', images: [], variant_options: DEFAULT_VARIANT_OPTIONS.map(o => ({ ...o, values: [] })), box_qty: '1' }); }}
+            onClick={() => { setShowForm(true); setEditing(null); setForm({ name: '', name_en: '', category: '', price: '', description: '', images: [], variant_options: DEFAULT_VARIANT_OPTIONS.map(o => ({ ...o, values: [] })), box_qty: '1', sku: '' }); }}
             className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition flex items-center gap-1"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
@@ -381,6 +385,7 @@ function ProductsTab({ onRefresh }: { onRefresh: () => void }) {
               <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Product Name (English) *" className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" required />
               <input value={form.name_en} onChange={e => setForm({ ...form, name_en: e.target.value })} placeholder="Product Name (Chinese)" className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
               <input value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} placeholder="Category" className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+              <input value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} placeholder="SKU (e.g. GAP-001)" className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
               <input value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="Price *" type="number" step="0.01" className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" required />
               <div>
                 <label className="block text-gray-400 text-xs mb-1">Box Qty (每箱数量) *</label>
@@ -475,6 +480,7 @@ function ProductsTab({ onRefresh }: { onRefresh: () => void }) {
                 <th className="text-left px-4 py-3 text-gray-400 font-medium">ID</th>
                 <th className="text-left px-4 py-3 text-gray-400 font-medium">Image</th>
                 <th className="text-left px-4 py-3 text-gray-400 font-medium">Name</th>
+                <th className="text-left px-4 py-3 text-gray-400 font-medium">SKU</th>
                 <th className="text-left px-4 py-3 text-gray-400 font-medium">Category</th>
                 <th className="text-left px-4 py-3 text-gray-400 font-medium">Options</th>
                 <th className="text-right px-4 py-3 text-gray-400 font-medium">Price</th>
@@ -504,6 +510,7 @@ function ProductsTab({ onRefresh }: { onRefresh: () => void }) {
                       )}
                     </td>
                     <td className="px-4 py-3 text-white">{p.name}{p.name_en ? ` / ${p.name_en}` : ''}</td>
+                    <td className="px-4 py-3 text-amber-400 font-mono text-xs">{p.sku || '-'}</td>
                     <td className="px-4 py-3 text-gray-400">{p.category || '-'}</td>
                     <td className="px-4 py-3">
                       {opts.length > 0 ? (
