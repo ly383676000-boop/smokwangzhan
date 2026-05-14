@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS products (
   images TEXT,
   category TEXT,
   variant_options TEXT,
+  sku TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -70,6 +71,10 @@ function migrateDB(db) {
         if (!existingCols.includes('box_qty')) {
           db.run("ALTER TABLE products ADD COLUMN box_qty INTEGER NOT NULL DEFAULT 1");
           console.log('Migration: added box_qty column to products (default 1)');
+        }
+        if (!existingCols.includes('sku')) {
+          db.run("ALTER TABLE products ADD COLUMN sku TEXT");
+          console.log('Migration: added sku column to products');
         }
       }
     }

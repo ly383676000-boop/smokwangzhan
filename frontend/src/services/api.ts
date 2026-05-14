@@ -53,7 +53,7 @@ export function mapApiProduct(api: ApiProduct) {
     image: image,
     images: images.length > 0 ? images : (image ? [image] : []),
     variantOptions: variantOptions,
-    sku: api.brand ? api.brand.substring(0, 3).toUpperCase() + '-' + String(api.id).padStart(3, '0') : 'SKU-' + String(api.id).padStart(3, '0'),
+    sku: api.sku || (api.brand ? api.brand.substring(0, 3).toUpperCase() + '-' + String(api.id).padStart(3, '0') : 'SKU-' + String(api.id).padStart(3, '0')),
     category: api.category || '',
     boxQty: api.box_qty || 1,
   };

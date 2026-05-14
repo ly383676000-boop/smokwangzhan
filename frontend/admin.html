@@ -41,6 +41,7 @@
                 <th class="px-4 py-3 text-sm font-semibold text-gray-600">ID</th>
                 <th class="px-4 py-3 text-sm font-semibold text-gray-600">Image</th>
                 <th class="px-4 py-3 text-sm font-semibold text-gray-600">Name</th>
+                <th class="px-4 py-3 text-sm font-semibold text-gray-600">SKU</th>
                 <th class="px-4 py-3 text-sm font-semibold text-gray-600">Brand</th>
                 <th class="px-4 py-3 text-sm font-semibold text-gray-600">Price</th>
                 <th class="px-4 py-3 text-sm font-semibold text-gray-600">Variants</th>
@@ -48,7 +49,7 @@
               </tr>
             </thead>
             <tbody id="products-tbody" class="divide-y">
-              <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">Loading products...</td></tr>
+              <tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">Loading products...</td></tr>
             </tbody>
           </table>
         </div>
@@ -194,6 +195,11 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
             <input type="text" id="product-category" placeholder="e.g., Pipes, Bongs, Grinders" class="w-full px-4 py-2 border rounded-lg">
           </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+          <input type="text" id="product-sku" placeholder="e.g., GAP-001" class="w-full px-4 py-2 border rounded-lg">
         </div>
 
         <div>
@@ -372,7 +378,7 @@
         
         const tbody = document.getElementById('products-tbody');
         if (products.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">No products yet. Add your first product!</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">No products yet. Add your first product!</td></tr>';
           return;
         }
         
@@ -383,6 +389,7 @@
               <img src="${p.image_url || 'https://via.placeholder.com/50x50?text=No+Image'}" class="w-12 h-12 object-cover rounded" onerror="this.src='https://via.placeholder.com/50x50?text=No'">
             </td>
             <td class="px-4 py-3 font-medium">${p.name}</td>
+            <td class="px-4 py-3 font-mono text-sm">${p.sku || '-'}</td>
             <td class="px-4 py-3 text-gray-600">${p.brand || '-'}</td>
             <td class="px-4 py-3 text-[#FF8C00] font-semibold">$${p.price.toFixed(2)}</td>
             <td class="px-4 py-3">${p.variant_count || 0}</td>
@@ -411,6 +418,7 @@
         document.getElementById('product-image').value = product.image_url || '';
         document.getElementById('product-desc').value = product.description || '';
         document.getElementById('product-desc-en').value = product.description_en || '';
+        document.getElementById('product-sku').value = product.sku || '';
         
         // Variant options
         document.getElementById('product-colors').value = product.colors || '';
@@ -480,6 +488,7 @@
         image_url: document.getElementById('product-image').value,
         description: document.getElementById('product-desc').value,
         description_en: document.getElementById('product-desc-en').value,
+        sku: document.getElementById('product-sku').value,
         // Variant options
         colors: document.getElementById('product-colors').value,
         sizes: document.getElementById('product-sizes').value,

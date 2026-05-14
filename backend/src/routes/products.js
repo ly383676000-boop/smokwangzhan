@@ -80,8 +80,8 @@ router.get('/:id', (req, res) => {
 router.post('/', (req, res) => {
   try {
     const { 
-      name, name_en, brand, description, description_en, price, images, category,
-      variant_options, box_qty
+      name, name_en, brand, description, description_en, price, images, image_url, category,
+      variant_options, box_qty, sku
     } = req.body;
     
     if (!name || !price) {
@@ -90,17 +90,18 @@ router.post('/', (req, res) => {
 
     const boxQty = Math.max(1, parseInt(box_qty) || 1);
 
-    // images can be: array of URLs, or JSON string, or null
+    // images: support both `images` (array/JSON) and `image_url` (single URL from admin)
     let imagesJSON = null;
-    if (images) {
-      if (Array.isArray(images)) {
-        imagesJSON = JSON.stringify(images);
-      } else if (typeof images === 'string') {
+    const imagesSource = images || (image_url ? [image_url] : null);
+    if (imagesSource) {
+      if (Array.isArray(imagesSource)) {
+        imagesJSON = JSON.stringify(imagesSource);
+      } else if (typeof imagesSource === 'string') {
         try {
-          const parsed = JSON.parse(images);
-          imagesJSON = Array.isArray(parsed) ? images : JSON.stringify([images]);
+          const parsed = JSON.parse(imagesSource);
+          imagesJSON = Array.isArray(parsed) ? imagesSource : JSON.stringify([imagesSource]);
         } catch {
-          imagesJSON = JSON.stringify([images]);
+          imagesJSON = JSON.stringify([imagesSource]);
         }
       }
     }
@@ -116,9 +117,9 @@ router.post('/', (req, res) => {
     }
     
     const id = runInsert(
-      `INSERT INTO products (name, name_en, brand, description, description_en, price, images, category, variant_options, box_qty)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [name, name_en || null, brand || null, description || null, description_en || null, price, imagesJSON, category || null, voJSON, boxQty]
+      `INSERT INTO products (name, name_en, brand, description, description_en, price, images, category, variant_options, box_qty, sku)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name, name_en || null, brand || null, description || null, description_en || null, price, imagesJSON, category || null, voJSON, boxQty, sku || null]
     );
     
     res.json({ id, message: 'Product created successfully' });
@@ -132,25 +133,32 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { 
-      name, name_en, brand, description, description_en, price, images, category,
-      variant_options, box_qty
+      name, name_en, brand, description, description_en, price, images, image_url, category,
+      variant_options, box_qty, sku
     } = req.body;
     const db = getDB();
 
     const boxQty = Math.max(1, parseInt(box_qty) || 1);
 
-    // images
+    // images: support both `images` (array/JSON) and `image_url` (single URL from admin)
     let imagesJSON = null;
-    if (images) {
-      if (Array.isArray(images)) {
-        imagesJSON = JSON.stringify(images);
-      } else if (typeof images === 'string') {
+    const imagesSource = images || (image_url ? [image_url] : null);
+    if (imagesSource) {
+      if (Array.isArray(imagesSource)) {
+        imagesJSON = JSON.stringify(imagesSource);
+      } else if (typeof imagesSource === 'string') {
         try {
-          const parsed = JSON.parse(images);
-          imagesJSON = Array.isArray(parsed) ? images : JSON.stringify([images]);
+          const parsed = JSON.parse(imagesSource);
+          imagesJSON = Array.isArray(parsed) ? imagesSource : JSON.stringify([imagesSource]);
         } catch {
-          imagesJSON = JSON.stringify([images]);
+          imagesJSON = JSON.stringify([imagesSource]);
         }
+      }
+    } else {
+      // If no images sent, keep existing images (don't overwrite with null)
+      const existing = runQuery('SELECT images FROM products WHERE id = ?', [req.params.id]);
+      if (existing && existing.length > 0) {
+        imagesJSON = existing[0].images;
       }
     }
     
@@ -165,9 +173,9 @@ router.put('/:id', (req, res) => {
     }
     
     db.run(
-      `UPDATE products SET name=?, name_en=?, brand=?, description=?, description_en=?, price=?, images=?, category=?, variant_options=?, box_qty=?
+      `UPDATE products SET name=?, name_en=?, brand=?, description=?, description_en=?, price=?, images=?, category=?, variant_options=?, box_qty=?, sku=?
        WHERE id=?`,
-      [name, name_en || null, brand || null, description || null, description_en || null, price, imagesJSON, category || null, voJSON, boxQty, req.params.id]
+      [name, name_en || null, brand || null, description || null, description_en || null, price, imagesJSON, category || null, voJSON, boxQty, sku || null, req.params.id]
     );
     
     res.json({ message: 'Product updated successfully' });
