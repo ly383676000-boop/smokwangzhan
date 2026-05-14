@@ -21,6 +21,7 @@ export interface ApiProduct {
   category: string;
   variant_options: ApiVariantOption[];
   box_qty: number;
+  sku: string;
   created_at: string;
 }
 
@@ -53,7 +54,7 @@ export function mapApiProduct(api: ApiProduct) {
     image: image,
     images: images.length > 0 ? images : (image ? [image] : []),
     variantOptions: variantOptions,
-    sku: api.sku || (api.brand ? api.brand.substring(0, 3).toUpperCase() + '-' + String(api.id).padStart(3, '0') : 'SKU-' + String(api.id).padStart(3, '0')),
+    sku: api.sku || String(api.id),
     category: api.category || '',
     boxQty: api.box_qty || 1,
   };
