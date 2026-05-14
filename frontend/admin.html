@@ -7,12 +7,47 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100">
-  <div class="min-h-screen">
+
+  <!-- Login Page -->
+  <div id="login-page" class="min-h-screen flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md">
+      <h1 class="text-2xl font-bold text-center text-[#1B4332] mb-2">Admin Login</h1>
+      <p class="text-gray-500 text-center mb-6">HONG KONG COOKIES TRADING LIMITED</p>
+      
+      <div id="login-error" class="hidden mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm"></div>
+      
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+          <input type="text" id="login-username" required 
+            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4332]"
+            placeholder="Enter username">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <input type="password" id="login-password" required 
+            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4332]"
+            placeholder="Enter password">
+        </div>
+        <button type="submit" 
+          class="w-full py-3 bg-[#1B4332] text-white rounded-lg font-semibold hover:bg-[#2D5016] transition">
+          Sign In
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Admin Panel (hidden until logged in) -->
+  <div id="admin-panel" class="min-h-screen hidden">
     <!-- Header -->
     <header class="bg-[#1B4332] text-white p-4">
       <div class="container mx-auto flex justify-between items-center">
         <h1 class="text-xl font-bold">HONG KONG COOKIES TRADING LIMITED - Admin</h1>
-        <a href="/" class="text-sm hover:underline">← Back to Store</a>
+        <div class="flex items-center gap-4">
+          <span id="current-user" class="text-sm text-gray-300"></span>
+          <button onclick="logout()" class="text-sm hover:underline bg-red-500/20 px-3 py-1 rounded">Logout</button>
+          <a href="/" class="text-sm hover:underline">← Back to Store</a>
+        </div>
       </div>
     </header>
 
@@ -22,6 +57,7 @@
         <button onclick="showTab('products')" id="tab-products" class="px-6 py-2 bg-[#1B4332] text-white rounded-lg font-semibold">Products</button>
         <button onclick="showTab('variants')" id="tab-variants" class="px-6 py-2 bg-white text-gray-700 rounded-lg font-semibold border">Variants</button>
         <button onclick="showTab('orders')" id="tab-orders" class="px-6 py-2 bg-white text-gray-700 rounded-lg font-semibold border">Orders</button>
+        <button onclick="showTab('settings')" id="tab-settings" class="px-6 py-2 bg-white text-gray-700 rounded-lg font-semibold border">Settings</button>
       </div>
 
       <!-- Products Tab -->
@@ -44,7 +80,6 @@
                 <th class="px-4 py-3 text-sm font-semibold text-gray-600">SKU</th>
                 <th class="px-4 py-3 text-sm font-semibold text-gray-600">Brand</th>
                 <th class="px-4 py-3 text-sm font-semibold text-gray-600">Price</th>
-                <th class="px-4 py-3 text-sm font-semibold text-gray-600">Variants</th>
                 <th class="px-4 py-3 text-sm font-semibold text-gray-600">Actions</th>
               </tr>
             </thead>
@@ -95,23 +130,6 @@
                 <input type="text" id="materials" placeholder="Glass, Metal, Silicone" class="w-full px-4 py-2 border rounded-lg">
               </div>
 
-              <!-- Custom Parameters -->
-              <div class="border-t pt-4 mt-4">
-                <h4 class="font-medium text-gray-700 mb-3">Custom Parameters (Optional)</h4>
-                <div class="grid grid-cols-2 gap-3">
-                  <input type="text" id="custom1-name" placeholder="Custom 1 Name" class="px-3 py-2 border rounded">
-                  <input type="text" id="custom1-value" placeholder="Values (comma sep)" class="px-3 py-2 border rounded">
-                </div>
-                <div class="grid grid-cols-2 gap-3 mt-2">
-                  <input type="text" id="custom2-name" placeholder="Custom 2 Name" class="px-3 py-2 border rounded">
-                  <input type="text" id="custom2-value" placeholder="Values (comma sep)" class="px-3 py-2 border rounded">
-                </div>
-                <div class="grid grid-cols-2 gap-3 mt-2">
-                  <input type="text" id="custom3-name" placeholder="Custom 3 Name" class="px-3 py-2 border rounded">
-                  <input type="text" id="custom3-value" placeholder="Values (comma sep)" class="px-3 py-2 border rounded">
-                </div>
-              </div>
-
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Price Modifier (per variant)</label>
                 <input type="number" id="price-modifier" value="0" step="0.01" class="w-full px-4 py-2 border rounded-lg">
@@ -130,14 +148,14 @@
               <span id="combination-count" class="text-sm text-gray-500">0 combinations</span>
             </div>
 
-            <div id="combinations-preview" class="h-96 overflow-y-auto border rounded-lg p-4 bg-gray-50">
+            <div id="combinations-preview" class="h-64 overflow-y-auto border rounded-lg p-4 bg-gray-50">
               <p class="text-gray-500 text-center">Click "Generate & Preview" to see combinations</p>
             </div>
 
             <div class="mt-4 space-y-3">
               <div class="flex gap-3">
                 <input type="number" id="batch-stock" value="100" placeholder="Stock" class="flex-1 px-4 py-2 border rounded-lg">
-                <input type="number" id="batch-price" step="0.01" placeholder="Base Price" class="flex-1 px-4 py-2 border rounded-lg">
+                <input type="number" id="batch-price" step="0.01" placeholder="Price Modifier" class="flex-1 px-4 py-2 border rounded-lg">
               </div>
               <button onclick="batchCreateVariants()" class="w-full py-3 bg-[#FF8C00] text-white rounded-lg font-semibold hover:bg-[#E67E00] transition">
                 Create All Variants
@@ -162,6 +180,56 @@
           <p class="text-gray-500">Loading orders...</p>
         </div>
       </div>
+
+      <!-- Settings Tab -->
+      <div id="panel-settings" class="bg-white rounded-xl shadow-lg p-6 hidden">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Company Settings</h2>
+        
+        <div id="settings-error" class="hidden mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm"></div>
+        <div id="settings-success" class="hidden mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-sm"></div>
+        
+        <form id="settings-form" class="space-y-4 max-w-2xl">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Company Name (EN)</label>
+              <input type="text" id="settings-company-name" class="w-full px-4 py-2 border rounded-lg">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Company Name (中文)</label>
+              <input type="text" id="settings-company-name-zh" class="w-full px-4 py-2 border rounded-lg">
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">WhatsApp</label>
+              <input type="text" id="settings-whatsapp" placeholder="+852 xxxx xxxx" class="w-full px-4 py-2 border rounded-lg">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input type="email" id="settings-email" class="w-full px-4 py-2 border rounded-lg">
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+              <input type="text" id="settings-phone" class="w-full px-4 py-2 border rounded-lg">
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+            <input type="text" id="settings-address" class="w-full px-4 py-2 border rounded-lg">
+          </div>
+
+          <div class="pt-4">
+            <button type="submit" class="px-6 py-3 bg-[#1B4332] text-white rounded-lg font-semibold hover:bg-[#2D5016] transition">
+              Save Settings
+            </button>
+          </div>
+        </form>
+      </div>
     </main>
   </div>
 
@@ -177,7 +245,7 @@
         
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Product Name (Chinese)</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Product Name (Chinese) *</label>
             <input type="text" id="product-name" required class="w-full px-4 py-2 border rounded-lg">
           </div>
           <div>
@@ -202,9 +270,16 @@
           <input type="text" id="product-sku" placeholder="e.g., GAP-001" class="w-full px-4 py-2 border rounded-lg">
         </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Price (USD)</label>
-          <input type="number" id="product-price" step="0.01" required class="w-full px-4 py-2 border rounded-lg">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Price (USD) *</label>
+            <input type="number" id="product-price" step="0.01" required class="w-full px-4 py-2 border rounded-lg">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Box Quantity</label>
+            <input type="number" id="product-box-qty" value="1" min="1" class="w-full px-4 py-2 border rounded-lg">
+          </div>
+        </div>
         </div>
 
         <div>
@@ -219,41 +294,6 @@
           </div>
         </div>
 
-        <script>
-        async function handleImageUpload(input) {
-          const file = input.files[0];
-          if (!file) return;
-          
-          const formData = new FormData();
-          formData.append('image', file);
-          
-          try {
-            const res = await fetch('/api/upload/image', {
-              method: 'POST',
-              body: formData
-            });
-            
-            if (!res.ok) throw new Error('Upload failed');
-            
-            const data = await res.json();
-            document.getElementById('product-image').value = data.url;
-            
-            // Show preview
-            const preview = document.getElementById('image-preview');
-            const previewImg = document.getElementById('preview-img');
-            const filename = document.getElementById('preview-filename');
-            
-            previewImg.src = data.url;
-            filename.textContent = data.filename;
-            preview.classList.remove('hidden');
-            
-          } catch (err) {
-            alert('Failed to upload image: ' + err.message);
-            input.value = '';
-          }
-        }
-        </script>
-
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Description (Chinese)</label>
           <textarea id="product-desc" rows="3" class="w-full px-4 py-2 border rounded-lg"></textarea>
@@ -262,82 +302,6 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Description (English)</label>
           <textarea id="product-desc-en" rows="3" class="w-full px-4 py-2 border rounded-lg"></textarea>
-        </div>
-
-        <!-- Product Variants Setup -->
-        <div class="border-t pt-4 mt-4">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <span class="w-6 h-6 bg-[#FF8C00] text-white rounded-full flex items-center justify-center text-sm mr-2">!</span>
-            Product Variants (Required)
-          </h3>
-          <p class="text-sm text-gray-500 mb-4">Set up variant options for this product. You can add more variants later in the Variants tab.</p>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                <span class="text-red-500">*</span> Colors Available
-              </label>
-              <input type="text" id="product-colors" placeholder="Black, White, Red, Blue (comma separated)" class="w-full px-4 py-2 border rounded-lg">
-              <p class="text-xs text-gray-400 mt-1">Leave empty if single color only</p>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                <span class="text-red-500">*</span> Sizes Available
-              </label>
-              <input type="text" id="product-sizes" placeholder="S, M, L, XL (comma separated)" class="w-full px-4 py-2 border rounded-lg">
-              <p class="text-xs text-gray-400 mt-1">Leave empty if single size only</p>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                <span class="text-red-500">*</span> Specifications
-              </label>
-              <input type="text" id="product-specifications" placeholder="Standard, Premium, Deluxe (comma separated)" class="w-full px-4 py-2 border rounded-lg">
-              <p class="text-xs text-gray-400 mt-1">Product specifications or models</p>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                <span class="text-red-500">*</span> Materials
-              </label>
-              <input type="text" id="product-materials" placeholder="Glass, Metal, Silicone (comma separated)" class="w-full px-4 py-2 border rounded-lg">
-              <p class="text-xs text-gray-400 mt-1">Product materials</p>
-            </div>
-          </div>
-
-          <!-- Custom Parameters -->
-          <div class="mt-4 p-4 bg-gray-50 rounded-lg">
-            <h4 class="font-medium text-gray-700 mb-3">Custom Parameters (Optional)</h4>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div>
-                <input type="text" id="product-custom1-name" placeholder="Custom 1 Name (e.g., Weight)" class="px-3 py-2 border rounded text-sm">
-              </div>
-              <div>
-                <input type="text" id="product-custom1-values" placeholder="Values (comma sep)" class="px-3 py-2 border rounded text-sm">
-              </div>
-              <div>
-                <input type="text" id="product-custom2-name" placeholder="Custom 2 Name (e.g., Power)" class="px-3 py-2 border rounded text-sm">
-              </div>
-              <div>
-                <input type="text" id="product-custom2-values" placeholder="Values (comma sep)" class="px-3 py-2 border rounded text-sm">
-              </div>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
-              <div>
-                <input type="text" id="product-custom3-name" placeholder="Custom 3 Name" class="px-3 py-2 border rounded text-sm">
-              </div>
-              <div>
-                <input type="text" id="product-custom3-values" placeholder="Values (comma sep)" class="px-3 py-2 border rounded text-sm">
-              </div>
-            </div>
-          </div>
-
-          <!-- Quick Generate Option -->
-          <div class="mt-4 flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
-            <input type="checkbox" id="auto-generate-variants" class="w-5 h-5 rounded">
-            <label for="auto-generate-variants" class="flex-1">
-              <span class="font-medium text-gray-700">Auto-generate variants now</span>
-              <span class="text-sm text-gray-500 block">Generate all SKU combinations based on options above</span>
-            </label>
-          </div>
         </div>
 
         <div class="flex gap-4 pt-4">
@@ -354,30 +318,116 @@
 
   <script>
     const API_BASE = '/api';
+    let currentToken = localStorage.getItem('admin_token');
+    let currentUser = localStorage.getItem('admin_username');
+
+    // Helper: make authenticated API request
+    function authFetch(url, options = {}) {
+      const headers = {
+        ...(currentToken ? { 'Authorization': `Bearer ${currentToken}` } : {}),
+        ...options.headers
+      };
+      // Don't set Content-Type for FormData - browser will set it with boundary
+      if (options.body instanceof FormData) {
+        delete headers['Content-Type'];
+      }
+      return fetch(url, { ...options, headers });
+    }
+
+    // Check if already logged in
+    function checkAuth() {
+      if (currentToken) {
+        showAdminPanel();
+      }
+    }
+
+    function showAdminPanel() {
+      document.getElementById('login-page').classList.add('hidden');
+      document.getElementById('admin-panel').classList.remove('hidden');
+      document.getElementById('current-user').textContent = currentUser || '';
+      loadProducts();
+      loadSettings();
+    }
+
+    // Login
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('login-username').value;
+      const password = document.getElementById('login-password').value;
+      const errorDiv = document.getElementById('login-error');
+      errorDiv.classList.add('hidden');
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          errorDiv.textContent = data.error || 'Login failed';
+          errorDiv.classList.remove('hidden');
+          return;
+        }
+
+        const data = await res.json();
+        currentToken = data.token;
+        currentUser = data.username;
+        localStorage.setItem('admin_token', data.token);
+        localStorage.setItem('admin_username', data.username);
+
+        showAdminPanel();
+      } catch (err) {
+        errorDiv.textContent = 'Connection error. Please check if the server is running.';
+        errorDiv.classList.remove('hidden');
+      }
+    });
+
+    // Logout
+    function logout() {
+      currentToken = null;
+      currentUser = null;
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_username');
+      document.getElementById('admin-panel').classList.add('hidden');
+      document.getElementById('login-page').classList.remove('hidden');
+      document.getElementById('login-form').reset();
+    }
 
     // Tab Navigation
     function showTab(tab) {
-      ['products', 'variants', 'orders'].forEach(t => {
+      ['products', 'variants', 'orders', 'settings'].forEach(t => {
         document.getElementById(`panel-${t}`).classList.toggle('hidden', t !== tab);
-        document.getElementById(`tab-${t}`).classList.toggle('bg-[#1B4332]', t === tab);
-        document.getElementById(`tab-${t}`).classList.toggle('text-white', t === tab);
-        document.getElementById(`tab-${t}`).classList.toggle('bg-white', t !== tab);
-        document.getElementById(`tab-${t}`).classList.toggle('text-gray-700', t !== tab);
+        const btn = document.getElementById(`tab-${t}`);
+        if (t === tab) {
+          btn.className = 'px-6 py-2 bg-[#1B4332] text-white rounded-lg font-semibold';
+        } else {
+          btn.className = 'px-6 py-2 bg-white text-gray-700 rounded-lg font-semibold border';
+        }
       });
       
       if (tab === 'products') loadProducts();
       if (tab === 'variants') loadProductsForVariantSelect();
       if (tab === 'orders') loadOrders();
+      if (tab === 'settings') loadSettings();
     }
 
-    // Products CRUD
+    // ==================== PRODUCTS ====================
     async function loadProducts() {
       try {
-        const res = await fetch(`${API_BASE}/products`);
+        const res = await authFetch(`${API_BASE}/products`);
+        if (!res.ok) {
+          if (res.status === 401) {
+            logout();
+            return;
+          }
+          throw new Error('Failed to load products');
+        }
         const products = await res.json();
         
         const tbody = document.getElementById('products-tbody');
-        if (products.length === 0) {
+        if (!products || products.length === 0) {
           tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">No products yet. Add your first product!</td></tr>';
           return;
         }
@@ -386,13 +436,12 @@
           <tr class="hover:bg-gray-50">
             <td class="px-4 py-3">${p.id}</td>
             <td class="px-4 py-3">
-              <img src="${p.image_url || 'https://via.placeholder.com/50x50?text=No+Image'}" class="w-12 h-12 object-cover rounded" onerror="this.src='https://via.placeholder.com/50x50?text=No'">
+              <img src="${p.image_url || '/placeholder.png'}" class="w-12 h-12 object-cover rounded" onerror="this.src='/placeholder.png'">
             </td>
             <td class="px-4 py-3 font-medium">${p.name}</td>
             <td class="px-4 py-3 font-mono text-sm">${p.sku || '-'}</td>
             <td class="px-4 py-3 text-gray-600">${p.brand || '-'}</td>
-            <td class="px-4 py-3 text-[#FF8C00] font-semibold">$${p.price.toFixed(2)}</td>
-            <td class="px-4 py-3">${p.variant_count || 0}</td>
+            <td class="px-4 py-3 text-[#FF8C00] font-semibold">$${(p.price || 0).toFixed(2)}</td>
             <td class="px-4 py-3">
               <button onclick="editProduct(${p.id})" class="text-blue-600 hover:underline mr-3">Edit</button>
               <button onclick="deleteProduct(${p.id})" class="text-red-600 hover:underline">Delete</button>
@@ -401,6 +450,8 @@
         `).join('');
       } catch (err) {
         console.error('Error loading products:', err);
+        document.getElementById('products-tbody').innerHTML = 
+          '<tr><td colspan="6" class="px-4 py-8 text-center text-red-500">Error loading products. Is the server running?</td></tr>';
       }
     }
 
@@ -410,29 +461,17 @@
       
       if (product) {
         document.getElementById('product-id').value = product.id;
-        document.getElementById('product-name').value = product.name;
+        document.getElementById('product-name').value = product.name || '';
         document.getElementById('product-name-en').value = product.name_en || '';
         document.getElementById('product-brand').value = product.brand || '';
         document.getElementById('product-category').value = product.category || '';
-        document.getElementById('product-price').value = product.price;
+        document.getElementById('product-price').value = product.price || '';
+        document.getElementById('product-box-qty').value = product.box_qty || 1;
         document.getElementById('product-image').value = product.image_url || '';
         document.getElementById('product-desc').value = product.description || '';
         document.getElementById('product-desc-en').value = product.description_en || '';
         document.getElementById('product-sku').value = product.sku || '';
         
-        // Variant options
-        document.getElementById('product-colors').value = product.colors || '';
-        document.getElementById('product-sizes').value = product.sizes || '';
-        document.getElementById('product-specifications').value = product.specifications || '';
-        document.getElementById('product-materials').value = product.materials || '';
-        document.getElementById('product-custom1-name').value = product.custom1_name || '';
-        document.getElementById('product-custom1-values').value = product.custom1_values || '';
-        document.getElementById('product-custom2-name').value = product.custom2_name || '';
-        document.getElementById('product-custom2-values').value = product.custom2_values || '';
-        document.getElementById('product-custom3-name').value = product.custom3_name || '';
-        document.getElementById('product-custom3-values').value = product.custom3_values || '';
-        
-        // Show existing image preview
         if (product.image_url) {
           const preview = document.getElementById('image-preview');
           const previewImg = document.getElementById('preview-img');
@@ -440,10 +479,13 @@
           previewImg.src = product.image_url;
           filename.textContent = product.image_url.split('/').pop();
           preview.classList.remove('hidden');
+        } else {
+          document.getElementById('image-preview').classList.add('hidden');
         }
       } else {
         document.getElementById('product-form').reset();
         document.getElementById('product-id').value = '';
+        document.getElementById('product-box-qty').value = '1';
         document.getElementById('image-preview').classList.add('hidden');
       }
     }
@@ -454,7 +496,8 @@
 
     async function editProduct(id) {
       try {
-        const res = await fetch(`${API_BASE}/products/${id}`);
+        const res = await authFetch(`${API_BASE}/products/${id}`);
+        if (!res.ok) return;
         const product = await res.json();
         showProductForm(product);
       } catch (err) {
@@ -466,10 +509,53 @@
       if (!confirm('Are you sure you want to delete this product?')) return;
       
       try {
-        await fetch(`${API_BASE}/products/${id}`, { method: 'DELETE' });
+        await authFetch(`${API_BASE}/products/${id}`, { method: 'DELETE' });
         loadProducts();
       } catch (err) {
         alert('Error deleting product');
+      }
+    }
+
+    // Image Upload
+    async function handleImageUpload(input) {
+      const file = input.files[0];
+      if (!file) return;
+      
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      try {
+        const res = await authFetch(`${API_BASE}/upload/image`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!res.ok) {
+          if (res.status === 401) {
+            alert('Please login first');
+            logout();
+            return;
+          }
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Upload failed');
+        }
+        
+        const data = await res.json();
+        // Store full URL for image
+        const imageUrl = data.url.startsWith('/') ? data.url : '/' + data.url;
+        document.getElementById('product-image').value = imageUrl;
+        
+        const preview = document.getElementById('image-preview');
+        const previewImg = document.getElementById('preview-img');
+        const filename = document.getElementById('preview-filename');
+        
+        previewImg.src = imageUrl;
+        filename.textContent = data.filename;
+        preview.classList.remove('hidden');
+        
+      } catch (err) {
+        alert('Failed to upload image: ' + err.message);
+        input.value = '';
       }
     }
 
@@ -477,7 +563,10 @@
       e.preventDefault();
       
       const id = document.getElementById('product-id').value;
-      const autoGenerate = document.getElementById('auto-generate-variants').checked;
+      const imageUrl = document.getElementById('product-image').value;
+      
+      // Build images array (for backend compatibility)
+      const images = imageUrl ? [imageUrl] : [];
       
       const data = {
         name: document.getElementById('product-name').value,
@@ -485,7 +574,8 @@
         brand: document.getElementById('product-brand').value,
         category: document.getElementById('product-category').value,
         price: parseFloat(document.getElementById('product-price').value),
-        image_url: document.getElementById('product-image').value,
+        box_qty: parseInt(document.getElementById('product-box-qty').value) || 1,
+        images: images,
         description: document.getElementById('product-desc').value,
         description_en: document.getElementById('product-desc-en').value,
         sku: document.getElementById('product-sku').value,
@@ -503,76 +593,41 @@
       };
       
       try {
-        let productId = id;
+        let res;
         if (id) {
-          await fetch(`${API_BASE}/products/${id}`, {
+          res = await authFetch(`${API_BASE}/products/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
           });
         } else {
-          const res = await fetch(`${API_BASE}/products`, {
+          res = await authFetch(`${API_BASE}/products`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
           });
-          const newProduct = await res.json();
-          productId = newProduct.id;
         }
         
-        // Auto-generate variants if checked
-        if (autoGenerate && productId) {
-          const prefix = document.getElementById('sku-prefix')?.value || data.name.substring(0, 5).toUpperCase().replace(/\s/g, '-');
-          const colors = data.colors.split(',').map(s => s.trim()).filter(Boolean);
-          const sizes = data.sizes.split(',').map(s => s.trim()).filter(Boolean);
-          const specs = data.specifications.split(',').map(s => s.trim()).filter(Boolean);
-          const materials = data.materials.split(',').map(s => s.trim()).filter(Boolean);
-          
-          if (colors.length > 0 || sizes.length > 0 || specs.length > 0 || materials.length > 0) {
-            try {
-              const genRes = await fetch(`${API_BASE}/variants/generate-combinations`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                  prefix, 
-                  colors, 
-                  sizes, 
-                  specifications: specs, 
-                  materials,
-                  custom1: { name: data.custom1_name, value: data.custom1_values.split(',').map(s => s.trim()).filter(Boolean) },
-                  custom2: { name: data.custom2_name, value: data.custom2_values.split(',').map(s => s.trim()).filter(Boolean) },
-                  custom3: { name: data.custom3_name, value: data.custom3_values.split(',').map(s => s.trim()).filter(Boolean) }
-                })
-              });
-              
-              const genData = await genRes.json();
-              if (genData.combinations && genData.combinations.length > 0) {
-                await fetch(`${API_BASE}/variants/batch`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ product_id: parseInt(productId), variants: genData.combinations.map(c => ({...c, stock: 100, price_modifier: 0})) })
-                });
-              }
-            } catch (err) {
-              console.error('Error auto-generating variants:', err);
-            }
-          }
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || 'Failed to save');
         }
         
         closeProductModal();
         loadProducts();
-        alert(id ? 'Product updated!' : 'Product created!' + (autoGenerate ? ' Variants generated!' : ''));
+        alert(id ? 'Product updated!' : 'Product created!');
       } catch (err) {
-        alert('Error saving product');
+        alert('Error saving product: ' + err.message);
       }
     });
 
-    // Variants
+    // ==================== VARIANTS ====================
     let currentCombinations = [];
 
     async function loadProductsForVariantSelect() {
       try {
-        const res = await fetch(`${API_BASE}/products`);
+        const res = await authFetch(`${API_BASE}/products`);
+        if (!res.ok) return;
         const products = await res.json();
         
         const select = document.getElementById('variant-product-select');
@@ -588,20 +643,22 @@
       if (!productId) return;
       
       try {
-        const res = await fetch(`${API_BASE}/products/${productId}`);
-        const product = await res.json();
+        const res = await authFetch(`${API_BASE}/variants/product/${productId}`);
+        if (!res.ok) return;
+        const variants = await res.json();
         
         const list = document.getElementById('variants-list');
-        if (!product.variants || product.variants.length === 0) {
+        if (!variants || variants.length === 0) {
           list.innerHTML = '<p class="text-gray-500 col-span-full">No variants for this product yet</p>';
           return;
         }
         
-        list.innerHTML = product.variants.map(v => `
+        list.innerHTML = variants.map(v => `
           <div class="bg-gray-50 p-3 rounded-lg text-sm">
             <div class="font-mono font-bold">${v.sku}</div>
             <div class="text-gray-600">${[v.color, v.size, v.specification, v.material].filter(Boolean).join(' / ')}</div>
-            <div class="text-[#FF8C00]">+$${v.price_modifier}</div>
+            <div class="text-[#FF8C00]">+$${(v.price_modifier || 0).toFixed(2)}</div>
+            <div class="text-xs text-gray-500">Stock: ${v.stock || 0}</div>
             <button onclick="deleteVariant(${v.id})" class="text-red-600 text-xs hover:underline mt-1">Delete</button>
           </div>
         `).join('');
@@ -617,49 +674,41 @@
       const specs = document.getElementById('specifications').value.split(',').map(s => s.trim()).filter(Boolean);
       const materials = document.getElementById('materials').value.split(',').map(s => s.trim()).filter(Boolean);
       
-      const custom1 = {
-        name: document.getElementById('custom1-name').value,
-        values: document.getElementById('custom1-value').value.split(',').map(s => s.trim()).filter(Boolean)
-      };
-      const custom2 = {
-        name: document.getElementById('custom2-name').value,
-        values: document.getElementById('custom2-value').value.split(',').map(s => s.trim()).filter(Boolean)
-      };
-      const custom3 = {
-        name: document.getElementById('custom3-name').value,
-        values: document.getElementById('custom3-value').value.split(',').map(s => s.trim()).filter(Boolean)
-      };
+      if (colors.length === 0 && sizes.length === 0 && specs.length === 0 && materials.length === 0) {
+        alert('Please enter at least one option (colors, sizes, specs, or materials)');
+        return;
+      }
       
       try {
-        const res = await fetch(`${API_BASE}/variants/generate-combinations`, {
+        const res = await authFetch(`${API_BASE}/variants/generate-combinations`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            prefix, 
-            colors, 
-            sizes, 
-            specifications: specs, 
-            materials,
-            custom1: { name: custom1.name, value: custom1.values },
-            custom2: { name: custom2.name, value: custom2.values },
-            custom3: { name: custom3.name, value: custom3.values }
-          })
+          body: JSON.stringify({ prefix, colors, sizes, specifications: specs, materials })
         });
         
-        const data = await res.json();
-        currentCombinations = data.combinations;
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || 'Failed to generate');
+        }
         
-        document.getElementById('combination-count').textContent = `${data.count} combinations`;
+        const data = await res.json();
+        currentCombinations = data.combinations || [];
+        
+        document.getElementById('combination-count').textContent = `${currentCombinations.length} combinations`;
         
         const preview = document.getElementById('combinations-preview');
-        preview.innerHTML = currentCombinations.map((c, i) => `
-          <div class="text-xs font-mono py-1 ${i % 2 === 0 ? 'bg-white' : ''} px-2">
-            ${c.sku} <span class="text-gray-500">(${c.color}, ${c.size}, ${c.specification}, ${c.material})</span>
-          </div>
-        `).join('');
+        if (currentCombinations.length === 0) {
+          preview.innerHTML = '<p class="text-gray-500 text-center">No combinations generated</p>';
+        } else {
+          preview.innerHTML = currentCombinations.map((c, i) => `
+            <div class="text-xs font-mono py-1 ${i % 2 === 0 ? 'bg-white' : ''} px-2">
+              ${c.sku} <span class="text-gray-500">(${c.color || '-'}, ${c.size || '-'}, ${c.specification || '-'}, ${c.material || '-'})</span>
+            </div>
+          `).join('');
+        }
       } catch (err) {
         console.error('Error generating combinations:', err);
-        alert('Error generating combinations');
+        alert('Error generating combinations: ' + err.message);
       }
     }
 
@@ -685,14 +734,19 @@
       }));
       
       try {
-        const res = await fetch(`${API_BASE}/variants/batch`, {
+        const res = await authFetch(`${API_BASE}/variants/batch`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ product_id: parseInt(productId), variants })
         });
         
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || 'Failed to create variants');
+        }
+        
         const data = await res.json();
-        alert(`Successfully created ${data.variants.length} variants!`);
+        alert(`Successfully created ${data.variants?.length || currentCombinations.length} variants!`);
         currentCombinations = [];
         document.getElementById('combinations-preview').innerHTML = '<p class="text-gray-500 text-center">Click "Generate & Preview" to see combinations</p>';
         document.getElementById('combination-count').textContent = '0 combinations';
@@ -700,7 +754,7 @@
         loadProducts();
       } catch (err) {
         console.error('Error creating variants:', err);
-        alert('Error creating variants');
+        alert('Error creating variants: ' + err.message);
       }
     }
 
@@ -708,7 +762,7 @@
       if (!confirm('Delete this variant?')) return;
       
       try {
-        await fetch(`${API_BASE}/variants/${id}`, { method: 'DELETE' });
+        await authFetch(`${API_BASE}/variants/${id}`, { method: 'DELETE' });
         loadProductVariants();
         loadProducts();
       } catch (err) {
@@ -716,14 +770,21 @@
       }
     }
 
-    // Orders
+    // ==================== ORDERS ====================
     async function loadOrders() {
       try {
-        const res = await fetch(`${API_BASE}/orders`);
+        const res = await authFetch(`${API_BASE}/orders`);
+        if (!res.ok) {
+          if (res.status === 401) {
+            logout();
+            return;
+          }
+          throw new Error('Failed to load orders');
+        }
         const orders = await res.json();
         
         const list = document.getElementById('orders-list');
-        if (orders.length === 0) {
+        if (!orders || orders.length === 0) {
           list.innerHTML = '<p class="text-gray-500">No orders yet</p>';
           return;
         }
@@ -732,24 +793,87 @@
           <div class="border rounded-lg p-4 hover:bg-gray-50">
             <div class="flex justify-between items-start">
               <div>
-                <div class="font-bold">${o.order_number}</div>
-                <div class="text-sm text-gray-600">${o.customer_name} - ${o.customer_address}</div>
-                <div class="text-xs text-gray-500">${new Date(o.created_at).toLocaleString()}</div>
+                <div class="font-bold">${o.order_number || o.id}</div>
+                <div class="text-sm text-gray-600">${o.customer_name || 'N/A'}</div>
+                <div class="text-sm text-gray-500">${o.customer_address || ''}</div>
+                <div class="text-xs text-gray-400 mt-1">${o.customer_phone || ''}</div>
+                <div class="text-xs text-gray-500 mt-1">${o.created_at ? new Date(o.created_at).toLocaleString() : ''}</div>
               </div>
               <div class="text-right">
-                <div class="text-xl font-bold text-[#FF8C00]">$${o.total_amount.toFixed(2)}</div>
-                <div class="text-sm text-gray-500">${o.item_count} items</div>
+                <div class="text-xl font-bold text-[#FF8C00]">$${(o.total_amount || 0).toFixed(2)}</div>
+                <div class="text-sm text-gray-500">${o.item_count || 0} items</div>
               </div>
             </div>
           </div>
         `).join('');
       } catch (err) {
         console.error('Error loading orders:', err);
+        document.getElementById('orders-list').innerHTML = '<p class="text-red-500">Error loading orders</p>';
       }
     }
 
-    // Initialize
-    loadProducts();
+    // ==================== SETTINGS ====================
+    async function loadSettings() {
+      try {
+        // Settings API doesn't require auth for GET
+        const res = await fetch(`${API_BASE}/settings`);
+        if (!res.ok) throw new Error('Failed to load settings');
+        const settings = await res.json();
+        
+        document.getElementById('settings-company-name').value = settings.company_name || '';
+        document.getElementById('settings-company-name-zh').value = settings.company_name_zh || '';
+        document.getElementById('settings-whatsapp').value = settings.whatsapp || '';
+        document.getElementById('settings-email').value = settings.email || '';
+        document.getElementById('settings-phone').value = settings.phone || '';
+        document.getElementById('settings-address').value = settings.address || '';
+      } catch (err) {
+        console.error('Error loading settings:', err);
+      }
+    }
+
+    document.getElementById('settings-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const errorDiv = document.getElementById('settings-error');
+      const successDiv = document.getElementById('settings-success');
+      errorDiv.classList.add('hidden');
+      successDiv.classList.add('hidden');
+      
+      const data = {
+        company_name: document.getElementById('settings-company-name').value,
+        company_name_zh: document.getElementById('settings-company-name-zh').value,
+        whatsapp: document.getElementById('settings-whatsapp').value,
+        email: document.getElementById('settings-email').value,
+        phone: document.getElementById('settings-phone').value,
+        address: document.getElementById('settings-address').value,
+      };
+      
+      try {
+        const res = await authFetch(`${API_BASE}/settings`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || 'Failed to save settings');
+        }
+        
+        successDiv.textContent = 'Settings saved successfully!';
+        successDiv.classList.remove('hidden');
+        
+        setTimeout(() => {
+          successDiv.classList.add('hidden');
+        }, 3000);
+      } catch (err) {
+        errorDiv.textContent = 'Error: ' + err.message;
+        errorDiv.classList.remove('hidden');
+      }
+    });
+
+    // Initialize - check if already logged in
+    checkAuth();
   </script>
 </body>
 </html>

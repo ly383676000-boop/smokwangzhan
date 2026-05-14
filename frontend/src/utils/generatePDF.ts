@@ -6,6 +6,7 @@ interface GeneratePDFParams {
   customer: CustomerInfo;
   total: number;
   originalTotal?: number;
+  shippingFee?: number;
   language?: 'en' | 'zh';
   companyName?: string;
 }
@@ -38,6 +39,7 @@ export const generateOrderPDF = async ({
   customer,
   total,
   originalTotal,
+  shippingFee,
   language = 'en',
   companyName,
 }: GeneratePDFParams): Promise<void> => {
@@ -271,13 +273,14 @@ export const generateOrderPDF = async ({
     doc.text(String(item.quantity), xPos, textRowY);
     xPos += colDefs[5].width;
 
-    // Unit Price
-    doc.text(`$ ${item.price.toFixed(2)}`, xPos, textRowY);
+    // Unit Price (show custom price if modified)
+    const displayPrice = item.customPrice !== undefined ? item.customPrice : item.price;
+    doc.text(`$ ${displayPrice.toFixed(2)}`, xPos, textRowY);
     xPos += colDefs[6].width;
 
-    // Total Price
+    // Total Price (use custom price if set)
     doc.setFont('helvetica', 'bold');
-    doc.text(`$ ${(item.price * item.quantity).toFixed(2)}`, xPos, textRowY);
+    doc.text(`$ ${(displayPrice * item.quantity).toFixed(2)}`, xPos, textRowY);
     doc.setFont('helvetica', 'normal');
 
     yPos += rowHeight;
@@ -286,8 +289,11 @@ export const generateOrderPDF = async ({
   yPos += 5;
 
   // ── Totals Section ──
-  const subtotal = items.reduce((s, item) => s + item.price * item.quantity, 0);
-  const shipping = total - subtotal;
+  const subtotal = items.reduce((s, item) => {
+    const price = item.customPrice !== undefined ? item.customPrice : item.price;
+    return s + price * item.quantity;
+  }, 0);
+  const shippingAmount = shippingFee !== undefined ? shippingFee : (total - subtotal);
   const rightCol = margin + totalTableWidth;
   const labelX = rightCol - 50;
   const valueX = rightCol;
@@ -299,8 +305,12 @@ export const generateOrderPDF = async ({
   doc.text(`$ ${subtotal.toFixed(2)}`, valueX, yPos, { align: 'right' });
   yPos += 7;
 
-  doc.text('Shipping', labelX, yPos);
-  doc.text(`$ ${Math.max(0, shipping).toFixed(2)}`, valueX, yPos, { align: 'right' });
+  if (shippingAmount > 0) {
+    doc.text('Shipping', labelX, yPos);
+    doc.text(`$ ${shippingAmount.toFixed(2)}`, valueX, yPos, { align: 'right' });
+    yPos += 7;
+  }
+
   yPos += 2;
 
   doc.setDrawColor(...darkColor);

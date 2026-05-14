@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
-interface LoginPageProps {
-  onLogin: (token: string) => void;
-}
-
-const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -22,15 +22,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         body: JSON.stringify({ username, password }),
       });
       
-      console.log('Login response status:', res.status);
-      console.log('Login response headers:', [...res.headers.entries()]);
-      
       const data = await res.json();
 
       if (res.ok) {
-        localStorage.setItem('admin_token', data.token);
-        localStorage.setItem('admin_user', data.username);
-        onLogin(data.token);
+        login(data.token, { username: data.username, role: data.role });
+        navigate('/admin');
       } else {
         setError(data.error || 'Login failed');
       }

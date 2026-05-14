@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { runQuery, runInsert, getDB } = require('../db/init');
+const { authMiddleware } = require('./auth');
 
 // Helper: parse images field (JSON string → array)
 function parseImages(imagesField) {
@@ -76,8 +77,8 @@ router.get('/:id', (req, res) => {
   }
 });
 
-// Create product
-router.post('/', (req, res) => {
+// Create product (需要认证)
+router.post('/', authMiddleware, (req, res) => {
   try {
     const { 
       name, name_en, brand, description, description_en, price, images, image_url, category,
@@ -129,8 +130,8 @@ router.post('/', (req, res) => {
   }
 });
 
-// Update product
-router.put('/:id', (req, res) => {
+// Update product (需要认证)
+router.put('/:id', authMiddleware, (req, res) => {
   try {
     const { 
       name, name_en, brand, description, description_en, price, images, image_url, category,
@@ -185,8 +186,8 @@ router.put('/:id', (req, res) => {
   }
 });
 
-// Delete product
-router.delete('/:id', (req, res) => {
+// Delete product (需要认证)
+router.delete('/:id', authMiddleware, (req, res) => {
   try {
     const db = getDB();
     db.run('DELETE FROM products WHERE id = ?', [req.params.id]);
@@ -197,8 +198,8 @@ router.delete('/:id', (req, res) => {
   }
 });
 
-// Batch delete products
-router.post('/batch-delete', (req, res) => {
+// Batch delete products (需要认证)
+router.post('/batch-delete', authMiddleware, (req, res) => {
   try {
     const { ids } = req.body;
     

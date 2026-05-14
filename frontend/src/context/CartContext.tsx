@@ -7,6 +7,7 @@ interface CartContextType {
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   updateBoxes: (itemId: string, boxes: number) => void;
+  updateItemPrice: (itemId: string, price: number) => void;
   clearCart: () => void;
   getTotal: () => number;
   getItemCount: () => number;
@@ -98,8 +99,19 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     );
   }, []);
 
+  const updateItemPrice = useCallback((itemId: string, price: number) => {
+    setItems(prev =>
+      prev.map(item =>
+        item.id === itemId ? { ...item, customPrice: price } : item
+      )
+    );
+  }, []);
+
   const getTotal = useCallback(() => {
-    return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    return items.reduce((sum, item) => {
+      const itemPrice = item.customPrice !== undefined ? item.customPrice : item.price;
+      return sum + itemPrice * item.quantity;
+    }, 0);
   }, [items]);
 
   const getItemCount = useCallback(() => {
@@ -117,6 +129,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       removeItem,
       updateQuantity,
       updateBoxes,
+      updateItemPrice,
       clearCart,
       getTotal,
       getItemCount,

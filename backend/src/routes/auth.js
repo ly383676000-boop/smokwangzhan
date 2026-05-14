@@ -1,10 +1,10 @@
 const express = require('express');
 const crypto = require('crypto');
 const router = express.Router();
-const { runQuery } = require('../db/init');
+const { runQuery, getDB } = require('../db/init');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'smok-shop-jwt-secret-2024';
-const JWT_EXPIRY = 86400;
+const JWT_EXPIRY = 86400; // 24 hours
 
 function signJWT(payload) {
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
@@ -24,24 +24,44 @@ function verifyJWT(token) {
   }
 }
 
-function getAdminCredentials() {
-  try {
-    const result = runQuery("SELECT value FROM settings WHERE key = 'admin_password'");
-    return result.length > 0 ? result[0].value : 'smok2024';
-  } catch {
-    return 'smok2024';
-  }
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(password).digest('hex');
 }
 
-function updateAdminPassword(newPassword) {
-  try {
-    const { getDB } = require('../db/init');
-    const db = getDB();
-    db.run("INSERT OR REPLACE INTO settings (key, value) VALUES ('admin_password', ?)", [newPassword]);
-    return true;
-  } catch {
-    return false;
+// Middleware: verify JWT token
+function authMiddleware(req, res, next) {
+  const auth = req.headers.authorization || '';
+  if (!auth.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No token provided' });
   }
+
+  const token = auth.slice(7);
+  const payload = verifyJWT(token);
+
+  if (!payload) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+
+  if (payload.exp < Math.floor(Date.now() / 1000)) {
+    return res.status(401).json({ error: 'Token expired' });
+  }
+
+  // Verify user still exists and is active
+  const users = runQuery("SELECT id, is_active FROM admin_users WHERE username = ?", [payload.username]);
+  if (users.length === 0 || users[0].is_active !== 1) {
+    return res.status(401).json({ error: 'User not found or inactive' });
+  }
+
+  req.user = payload;
+  next();
+}
+
+// Middleware: require admin role
+function adminOnly(req, res, next) {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
 }
 
 router.post('/login', (req, res) => {
@@ -52,75 +72,57 @@ router.post('/login', (req, res) => {
       return res.status(400).json({ error: 'Username and password required' });
     }
 
-    const adminPassword = getAdminCredentials();
+    const passwordHash = hashPassword(password);
+    const users = runQuery("SELECT id, username, password_hash, role, is_active FROM admin_users WHERE username = ?", [username]);
 
-    if (username !== 'admin' || password !== adminPassword) {
+    if (users.length === 0) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const user = users[0];
+
+    if (user.is_active !== 1) {
+      return res.status(401).json({ error: 'Account is disabled' });
+    }
+
+    if (user.password_hash !== passwordHash) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const token = signJWT({
-      sub: 'admin',
-      username: 'admin',
-      role: 'admin',
+      sub: user.id,
+      username: user.username,
+      role: user.role,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + JWT_EXPIRY,
     });
 
-    res.json({ token, username: 'admin', role: 'admin' });
+    res.json({ token, username: user.username, role: user.role });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-router.get('/me', (req, res) => {
-  try {
-    const auth = req.headers.authorization || '';
-    if (!auth.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-
-    const token = auth.slice(7);
-    const payload = verifyJWT(token);
-
-    if (!payload) {
-      return res.status(401).json({ error: 'Invalid token' });
-    }
-
-    if (payload.exp < Math.floor(Date.now() / 1000)) {
-      return res.status(401).json({ error: 'Token expired' });
-    }
-
-    res.json({ username: payload.username, role: payload.role });
-  } catch (err) {
-    console.error('Token verify error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+router.get('/me', authMiddleware, (req, res) => {
+  res.json({ username: req.user.username, role: req.user.role });
 });
 
-router.put('/password', (req, res) => {
+router.put('/password', authMiddleware, (req, res) => {
   try {
-    const auth = req.headers.authorization || '';
-    if (!auth.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-
-    const token = auth.slice(7);
-    const payload = verifyJWT(token);
-
-    if (!payload || payload.exp < Math.floor(Date.now() / 1000)) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
     const { currentPassword, newPassword } = req.body;
+    const username = req.user.username;
 
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ error: 'Current and new password required' });
     }
 
-    const adminPassword = getAdminCredentials();
+    const users = runQuery("SELECT password_hash FROM admin_users WHERE username = ?", [username]);
+    if (users.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
-    if (currentPassword !== adminPassword) {
+    if (users[0].password_hash !== hashPassword(currentPassword)) {
       return res.status(400).json({ error: 'Current password is incorrect' });
     }
 
@@ -128,11 +130,9 @@ router.put('/password', (req, res) => {
       return res.status(400).json({ error: 'New password must be at least 4 characters' });
     }
 
-    const success = updateAdminPassword(newPassword);
-
-    if (!success) {
-      return res.status(500).json({ error: 'Failed to update password' });
-    }
+    const db = getDB();
+    db.run("UPDATE admin_users SET password_hash = ?, updated_at = datetime('now') WHERE username = ?",
+      [hashPassword(newPassword), username]);
 
     res.json({ success: true, message: 'Password updated successfully' });
   } catch (err) {
@@ -141,4 +141,4 @@ router.put('/password', (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = { router, authMiddleware, adminOnly };

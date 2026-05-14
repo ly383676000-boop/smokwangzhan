@@ -1,4 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
+import UserManagement from './UserManagement';
 
 // ============ Types ============
 interface VariantOption {
@@ -47,10 +51,11 @@ const DEFAULT_VARIANT_OPTIONS: VariantOption[] = [
 // ============ Admin API helper ============
 function adminFetch(path: string, options: RequestInit = {}) {
   const token = localStorage.getItem('admin_token');
+  const isFormData = options.body instanceof FormData;
   return fetch(path, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
@@ -259,7 +264,7 @@ function ProductsTab({ onRefresh }: { onRefresh: () => void }) {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/products');
+      const res = await adminFetch('/api/products');
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
     } catch { /* ignore */ }
@@ -403,7 +408,7 @@ function ProductsTab({ onRefresh }: { onRefresh: () => void }) {
                           for (let i = 0; i < files.length; i++) {
                             const formData = new FormData();
                             formData.append('image', files[i]);
-                            const res = await fetch('/api/upload/image', { method: 'POST', body: formData });
+                            const res = await adminFetch('/api/upload/image', { method: 'POST', body: formData });
                             if (!res.ok) throw new Error('Upload failed');
                             const data = await res.json();
                             newUrls.push(data.url);
@@ -819,6 +824,7 @@ function OrdersTab() {
 
 // ============ Settings Tab ============
 function SettingsTab() {
+  const { refreshSettings } = useSettings();
   const [settings, setSettings] = useState({
     company_name: '',
     company_name_zh: '',
@@ -839,7 +845,10 @@ function SettingsTab() {
   useEffect(() => {
     fetch('/api/settings')
       .then(res => res.json())
-      .then(data => setSettings(data))
+      .then(data => {
+        console.log('🔧 Admin settings loaded:', data);
+        setSettings(data);
+      })
       .catch(err => console.error('Failed to load settings:', err));
   }, []);
 
@@ -847,17 +856,13 @@ function SettingsTab() {
     setSaving(true);
     setMessage(null);
     try {
-      const token = localStorage.getItem('admin_token');
-      const res = await fetch('/api/settings', {
+      const res = await adminFetch('/api/settings', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
         body: JSON.stringify(settings),
       });
       if (res.ok) {
         setMessage({ type: 'success', text: 'Settings saved successfully!' });
+        refreshSettings(); // 刷新全局设置
       } else {
         throw new Error('Failed to save');
       }
@@ -880,13 +885,8 @@ function SettingsTab() {
     }
     setChangingPassword(true);
     try {
-      const token = localStorage.getItem('admin_token');
-      const res = await fetch('/api/auth/password', {
+      const res = await adminFetch('/api/auth/password', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
         body: JSON.stringify({
           currentPassword: passwordForm.current,
           newPassword: passwordForm.newPass,
@@ -1097,11 +1097,9 @@ function SettingsTab() {
 }
 
 // ============ Main Admin Panel ============
-interface AdminPanelProps {
-  onLogout: () => void;
-}
-
-const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
+const AdminPanel: React.FC = () => {
+  const { logout, isAdmin, user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -1110,7 +1108,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const loadData = useCallback(async () => {
     try {
       const [pRes, oRes] = await Promise.all([
-        fetch('/api/products'),
+        adminFetch('/api/products'),
         adminFetch('/api/orders'),
       ]);
       if (pRes.ok) setProducts(await pRes.json());
@@ -1127,6 +1125,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     { key: 'products', label: 'Products', icon: '📦' },
     { key: 'orders', label: 'Orders', icon: '🛒' },
     { key: 'settings', label: 'Settings', icon: '⚙️' },
+    ...(isAdmin ? [{ key: 'users' as Tab, label: 'User Management', icon: '👥' }] : []),
   ];
 
   return (
@@ -1158,19 +1157,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-gray-700">
+        <div className="p-4 border-t border-gray-700 space-y-1">
           <button
-            onClick={() => {
-              localStorage.removeItem('admin_token');
-              localStorage.removeItem('admin_user');
-              onLogout();
-            }}
+            onClick={logout}
             className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            Sign Out
+            Sign Out ({user?.username})
           </button>
         </div>
       </aside>
@@ -1182,6 +1177,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
           {activeTab === 'products' && <ProductsTab onRefresh={handleRefresh} />}
           {activeTab === 'orders' && <OrdersTab />}
           {activeTab === 'settings' && <SettingsTab />}
+          {activeTab === 'users' && <UserManagement />}
         </div>
       </main>
     </div>

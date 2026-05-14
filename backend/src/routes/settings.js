@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { runQuery, getDB } = require('../db/init');
+const { runQuery, getDB, saveDB } = require('../db/init');
 const feishuService = require('../services/feishu');
+const { authMiddleware } = require('./auth');
 
 const ALLOWED_KEYS = [
   'company_name', 'company_name_zh', 'whatsapp', 'email', 'address', 'phone',
@@ -22,7 +23,7 @@ router.get('/', (req, res) => {
   }
 });
 
-router.put('/', (req, res) => {
+router.put('/', authMiddleware, (req, res) => {
   try {
     const db = getDB();
     const updates = req.body;
@@ -36,6 +37,8 @@ router.put('/', (req, res) => {
         db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, String(value)]);
       }
     }
+
+    saveDB();
 
     const settings = runQuery('SELECT key, value FROM settings');
     const result = {};
